@@ -112,6 +112,10 @@
         return Math.cos(n);
     }
 
+    function ABS(n) {
+        return Math.abs(n);
+    }
+
     function SQR(n) {
         return Math.sqrt(n);
     }
@@ -228,19 +232,19 @@
         }
         for (let I = 0; I < NUM_PLAYERS; I++) {
             for (let J = 0; J < NUM_SHIPS; J++) {
-                S0[I, J] = 0;
-                S3[I, J] = 0
-                S1[I, J] = 3;
-                S2[I, J] = 3;
+                S0[I][J] = 0;
+                S3[I][J] = 0
+                S1[I][J] = 3;
+                S2[I][J] = 3;
             }
             for (let K = 1; K <= F1; K++) {
                 let J = INT(RND(0) * NUM_SHIPS);
-                S0[I, J] = S0 % [I, J] + 1;
+                S0[I][J] = S0[I][J] + 1;
             }
             resourceSeed = - 1;
             for (let J = 0; J < NUM_SHIPS; J++) {
-                if (S0[I, J] >= resourceSeed) {
-                    resourceSeed = S0[I, J]
+                if (S0[I][J] >= resourceSeed) {
+                    resourceSeed = S0[I][J]
                     H[I] = J;
                 }
             }
@@ -291,6 +295,16 @@
         return F;
     }
 
+    function calcShipForce(planet, family) {
+        // line 2300 
+        let J = planet;
+        let K = family;
+        F = 0;
+        for (let L = 0; L < NUM_SHIPS; L++) {
+            if ((S1[K - 1][L] == -J) || (S2[K - 1][L] == J && S3[K - 1][L] == 0)) F = F + 1;
+        }
+        return (F);
+    }
     function calcTravelTime(planet1, planet2) {
         //4470 rem Travel time calc From J to P8, result returned in S
         let J = planet1; P8 = planet2;
@@ -305,15 +319,15 @@
         print("WORKING...");
         S = 0;
         for (P = 1; P <= NUM_PLANETS; P++) {
-            S = S + resources[P, 0];
+            S = S + resources[P][0];
         }
         if (S == 0 || (D0 > D3 && RND(0) > 0.9)) return; // Game over.
         T = 0;
         for (J = 1; J <= NUM_PLANETS; J++) {
             calcPatrolForce(J);
-            T[J] = resources[J, 0] - 2 * F;
+            T[J] = resources[J][0] - 2 * F;
             for (K = 1; K <= NUM_PLAYERS; K++) {
-                T[J] = T[J] + resources[J, K];
+                T[J] = T[J] + resources[J][K];
             }
             if (T[J] < 0) T[J] = 0;
             if (J == 3) T[J] = T[J] + 10;
@@ -321,7 +335,7 @@
         }
         Q[0] = 0;
         for (P = 1; P <= NUM_PLANETS; P++) {
-            Q[P] = Q[P - 1] + resources[P, 0] / S;
+            Q[P] = Q[P - 1] + resources[P][0] / S;
         }
         Q[0] = S;
         T[0] = 0;
@@ -340,8 +354,8 @@
             P9 = O[A];
             if (S[P9 - 1] != 0) {  // Human player
                 cls();
-                print("COMMANDS FOR ", B1[P9 % - 1], " FOR DAY", D0, ":");
-                await processCommands();
+                print("COMMANDS FOR ", B1[P9-1], " FOR DAY", D0, ":");
+                await processCommands(P9);
                 //1070  GOSUB 1250: IF C% = 11 THEN 1090
                 //1071  GOTO 1070
                 //1080  GOSUB 3410
@@ -351,7 +365,7 @@
 
     }
 
-    async function processCommands() {
+    async function processCommands(player) {
         let retry = true;
         for (; ;) {
             if (retry) {
@@ -376,6 +390,8 @@
                     case 2: await showMap(false); break;
                     case 3: travelTimes(); break;
                     case 4: showMining(); break;
+                    case 5: showShipsInOrbit(); break;
+                    case 6: showShipStatus(player); break;
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
                 if (C == 11) break;
@@ -418,9 +434,9 @@
         for (P = 1; P <= NUM_PLANETS; P++) {
             printPlain(planets[P].name);
             for (J = 1; J <= NUM_PLAYERS; J++) {
-                printPlain(TAB(12 + 11 * (J - 1)), resources[P, J]);
+                printPlain(TAB(12 + 11 * (J - 1)), resources[P][J]);
             }
-            printPlain(TAB(12 + 11 * NUM_PLAYERS), resources[P, 0]);
+            printPlain(TAB(12 + 11 * NUM_PLAYERS), resources[P][0]);
             print();
         }
     }
@@ -458,6 +474,61 @@
         }
         updateScreen();
         await input("PRESS ENTER");
+    }
+
+    function showShipsInOrbit() {
+        print();
+        print("SHIPS IN PLANETARY ORBIT ON DAY", D0);
+        printPlain("PLANET");
+        for (J = 0; J <= NUM_PLAYERS - 1; J++) {
+            printPlain(TAB(10 + 11 * J), LEFT(B1[J], 9));
+        }
+        printPlain(TAB(10 + 11 * NUM_PLAYERS), "PATROL");
+        print();
+        printPlain("------");
+        for (J = 0; J <= NUM_PLAYERS; J++) {
+            printPlain(TAB(10 + 11 * J), "=========");
+        }
+        print()
+        for (J = 1; J <= NUM_PLANETS; J++) {
+            printPlain(planets[J].name);
+            for (K = 1; K <= NUM_PLAYERS; K++) {
+                printPlain(TAB(12 + 11 * (K - 1)));
+                calcShipForce(J, K);
+                printPlain(F);
+            }
+            printPlain(TAB(12 + 11 * NUM_PLAYERS));
+            calcPatrolForce(J);
+            print(F);
+        }
+        print()
+    }
+
+    function showShipStatus(player) {
+        // line 1470
+        J=player;
+        print();
+        printPlain("SHIP STATUS OF ", B1[J - 1], " FAMILY ON DAY", D0); print();
+        printPlain("SHIP (SKILL)");
+        printPlain(TAB(15), "FROM"); 
+        printPlain(TAB(23), "TO");
+        printPlain(TAB(31),"DAYS TO GO");
+        print();
+        printPlain("------------");
+        printPlain(TAB( 15),"----");
+        printPlain(TAB(23),"--");
+        printPlain(TAB(31),"----------");
+        print();
+        for (I = 0; I <= NUM_SHIPS - 1; I++) {
+            if (S0[J - 1][ I] < 0) continue;
+            printPlain(I + 1,TAB(6),"(",S0[J - 1][I],")");
+            printPlain(TAB(15));
+            P8 = ABS(S1[J - 1][I]);
+            printPlain(planets[P8].name);
+            printPlain(TAB(23),planets[S2[J - 1][I]].name); 
+            printPlain(TAB(31), S3[J - 1][I]);
+            print();
+        }
     }
 
     function travelTimes() {
