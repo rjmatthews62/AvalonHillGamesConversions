@@ -7,21 +7,28 @@
 <script src="jquery-3.6.0.min.js"></script>
 <script>
     //Utility
-    var inputWait;
+    var screenMem = new Array(0x400); // Simulated screen memory.
+    var linePos = 0; // Estimated cursor position for TAB
 
     function cls() { // Clear screeen.
         $("#console").html("");
+        screenMem.fill(32); // Spaces.
     }
 
-    function printArgs(args, usecr) {
+
+    function printArgs(args, usecr=true, space=true) {
         var s = "";
         for (let i = 0; i < args.length; i++) {
-            if (i > 0) s += " ";
+            if (i > 0 && space) s += " ";
             s += args[i];
         }
         var content = $("#console").html();
         content += s;
-        if (usecr) content += "</br>\n";
+        linePos += s.length % CHARS_LINE;
+        if (usecr) {
+            content += "\n"; 
+            linePos=0;
+        }
         $("#console").html(content);
     }
 
@@ -33,12 +40,27 @@
         printArgs(arguments, false);
     }
 
+    function printPlain() {
+        printArgs(arguments, false, false);
+    }
+
     function doInputWait() {
         var p = new Promise((myResolve, myReject) => {
             $("#enter").click(myResolve);
         }
         );
         return p;
+    }
+
+    function updateScreen() {
+        for (let y = 0; y < 16; y++) {
+            let s = "";
+            let p = y * CHARS_LINE;
+            for (let x = 0; x < CHARS_LINE; x++) {
+                s += String.fromCharCode(screenMem[x + p]);
+            }
+            print(s);
+        }
     }
 
     async function input(prompt) {
@@ -72,9 +94,55 @@
         return Math.floor(n);
     }
 
+    function SIN(n) {
+        return Math.sin(n);
+    }
+
+    function COS(n) {
+        return Math.cos(n);
+    }
+
+    function SQR(n) {
+        return Math.sqrt(n);
+    }
+
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    function PEEK(addr) {
+        if (addr < SCREEN_ADDR || addr >= SCREEN_ADDR + SCREEN_SIZE) return 0;
+        return screenMem[addr - SCREEN_ADDR];
+    }
+
+    function POKE(addr, val) {
+        if (addr < SCREEN_ADDR || addr >= SCREEN_ADDR + SCREEN_SIZE) return 0;
+        screenMem[addr - SCREEN_ADDR] = (val & 0xff);
+    }
+
+    function ASC(c) {
+        if (c == "") c = " ";
+        return c.charCodeAt(0);
+    }
+
+    function LEN(s) {
+        return s.length;
+    }
+
+    function MID(s,i,len) {
+        return s.substr(i-1,len);
+    }
+
+    function TAB(n) {
+        var result="";
+        while (linePos<n-1) {
+            result+=" ";
+            linePos+=1;
+        }
+        return result;
+    }
+
+    var CLS = cls, PRINT = print;
 
 
     const planets = [
@@ -116,8 +184,9 @@
     var M9 = 15;
     var M8 = 45;
 
-    var SCREEN_ADDR = 15360;
-    var CHARS_LINE = 64
+    const SCREEN_ADDR = 15360;
+    const SCREEN_SIZE = 0x400;
+    const CHARS_LINE = 64
     var S9 = 160;
     var S8 = 75;
     var D4 = 40
@@ -296,7 +365,8 @@
             print("SELECT FROM THE FOLLOWING PLANETS:");
             K = 0;
             for (P8 = P6; P8 <= NUM_PLANETS; P8++) {
-                printNoCr("     ", P8, "-", planets[P8].name, " ");
+                printPlain(TAB(K * 10 + 1));
+                printPlain(P8, "-", planets[P8].name, " ");
                 K = K + 1;
                 if (K == 4) { K = 0; print(); }
             }
@@ -308,7 +378,37 @@
 
     async function showMap(isLarge) {
         await selectPlanet(0);
-        print("Showmap goes here.", isLarge);
+        CLS();
+        if (isLarge) S7 = S9; else S7=S8;
+        if (S7 == S8) print("SMALL"); else print("LARGE");
+        print("SOLAR SYSTEM CENTERED ON ", planets[J].name);
+        X1 = planets[J].distance * COS(planetAngle[J]);
+        Y1 = planets[J].distance * SIN(planetAngle[J]);
+        for (K = 0; K <= NUM_PLANETS; K++) {
+            X2 = planets[K].distance * COS(planetAngle[K]) - X1;
+            Y2 = planets[K].distance * SIN(planetAngle[K]) - Y1;
+            if (J != K) {
+                X3 = SQR(SQR(X2 * X2 + Y2 * Y2)); X2 = X2 / X3; Y2 = Y2 / X3;
+            }
+            V = INT((-Y2 + .5 * S7) * M9 / S7) + 1;
+            H = INT((X2 + .5 * S7) * M8 / S7) + 1;
+            if (V < 1 || V > M9 || H < 1 || H > M8) continue;
+            P = (V - 1) * CHARS_LINE + SCREEN_ADDR + H;
+            P2 = PEEK(P); // Simulating TRS-80 screen map.
+            if (P2 != 32) continue; // If not blank, bail.
+            if (K == 0) P2 = ASC("*"); else P2 = ASC("+");
+            POKE(P, P2);
+            for (P2 = 1; P2 <= 7; P2++) {
+
+                H = H + 1; P = P + 1; if (H > M8 + 7) break;
+                let tmp = PEEK(P);
+                if (tmp != 43 && tmp != 42) {
+                    if (P2 > LEN(planets[K].name)) POKE(P, 32); else POKE(P, ASC(MID(planets[K].name, P2, 1)));
+                } else break;
+            }
+        }
+        updateScreen();
+        await input("PRESS ENTER");
     }
 
     function computerPlayer() {
@@ -338,7 +438,7 @@
 
 <body>
     <h1>Planet Miner</h1>
-    <p id="console"></p>
+    <pre id="console"></pre>
     <input type="text" id="input" />
     <button type="button" id="enter">Enter</button>
 </body>
