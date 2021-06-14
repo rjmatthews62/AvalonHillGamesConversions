@@ -354,7 +354,7 @@
             P9 = O[A];
             if (S[P9 - 1] != 0) {  // Human player
                 cls();
-                print("COMMANDS FOR ", B1[P9-1], " FOR DAY", D0, ":");
+                print("COMMANDS FOR ", B1[P9 - 1], " FOR DAY", D0, ":");
                 await processCommands(P9);
                 //1070  GOSUB 1250: IF C% = 11 THEN 1090
                 //1071  GOTO 1070
@@ -392,6 +392,7 @@
                     case 4: showMining(); break;
                     case 5: showShipsInOrbit(); break;
                     case 6: showShipStatus(player); break;
+                    case 7: await setShipDest(player); break;
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
                 if (C == 11) break;
@@ -400,10 +401,10 @@
         }
     }
 
-    async function selectPlanet(startPlanet) {
+    async function selectPlanet(startPlanet, prompt = "SELECT FROM THE FOLLOWING PLANETS:") {
         let P6 = startPlanet;
         do {
-            print("SELECT FROM THE FOLLOWING PLANETS:");
+            print();
             K = 0;
             for (P8 = P6; P8 <= NUM_PLANETS; P8++) {
                 printPlain(TAB(K * 10 + 1));
@@ -506,26 +507,26 @@
 
     function showShipStatus(player) {
         // line 1470
-        J=player;
+        J = player;
         print();
         printPlain("SHIP STATUS OF ", B1[J - 1], " FAMILY ON DAY", D0); print();
         printPlain("SHIP (SKILL)");
-        printPlain(TAB(15), "FROM"); 
+        printPlain(TAB(15), "FROM");
         printPlain(TAB(23), "TO");
-        printPlain(TAB(31),"DAYS TO GO");
+        printPlain(TAB(31), "DAYS TO GO");
         print();
         printPlain("------------");
-        printPlain(TAB( 15),"----");
-        printPlain(TAB(23),"--");
-        printPlain(TAB(31),"----------");
+        printPlain(TAB(15), "----");
+        printPlain(TAB(23), "--");
+        printPlain(TAB(31), "----------");
         print();
         for (I = 0; I <= NUM_SHIPS - 1; I++) {
-            if (S0[J - 1][ I] < 0) continue;
-            printPlain(I + 1,TAB(6),"(",S0[J - 1][I],")");
+            if (S0[J - 1][I] < 0) continue;
+            printPlain(I + 1, TAB(6), "(", S0[J - 1][I], ")");
             printPlain(TAB(15));
             P8 = ABS(S1[J - 1][I]);
             printPlain(planets[P8].name);
-            printPlain(TAB(23),planets[S2[J - 1][I]].name); 
+            printPlain(TAB(23), planets[S2[J - 1][I]].name);
             printPlain(TAB(31), S3[J - 1][I]);
             print();
         }
@@ -556,6 +557,26 @@
             print();
         };
         print();
+    }
+
+    async function setShipDest(player) {
+        P9 = player;
+        showShipStatus(player);
+        do {
+            P7 = await inputNum("SHIP NUMBER");
+        } while (P7 < 1 || P7 > NUM_SHIPS);
+        if ((S3[P9 - 1][P7 - 1] = 0 || S1[P9 - 1][P7 - 1] < 0)) {
+            print("NOT ALLOWED ON THAT SHIP.");
+            return;
+        }
+        P6 = 1;
+        P8 = await selectPlanet(P6, "DESTINATION:");
+        J = ABS(S1[P9 - 1][P7 - 1]);
+        S = calcTravelTime(J, P8);
+        S3[P9 - 1][P7 - 1] = S;  // Travel times
+        S1[P9 - 1][P7 - 1] = - J; // From
+        S2[P9 - 1][P7 - 1] = P8; // To
+        showShipStatus(player);
     }
 
     function computerPlayer() {
