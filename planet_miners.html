@@ -16,6 +16,12 @@
     }
 
 
+    function calcLinePos(s) {
+        var ix = s.lastIndexOf("\n");
+        if (ix < 0) ix = 0;
+        return s.length - ix;
+    }
+
     function printArgs(args, usecr = true, space = true) {
         var s = "";
         for (let i = 0; i < args.length; i++) {
@@ -23,6 +29,10 @@
             s += args[i];
         }
         var content = $("#console").html();
+        if (linePos > 0) {
+            let x = calcLinePos(content);
+            while (x++ < linePos) content += " ";
+        }
         content += s;
         linePos += s.length % CHARS_LINE;
         if (usecr) {
@@ -133,10 +143,14 @@
         return s.substr(i - 1, len);
     }
 
+    function LEFT(s, len) {
+        return s.substr(0, len);
+    }
+
     function TAB(n) {
         var result = "";
-        while (linePos < n) {
-            result += " ";
+        while (linePos < (n - 1)) {
+            //result += " ";
             linePos += 1;
         }
         return result;
@@ -206,11 +220,11 @@
         D3 = D4 + INT(D4 * RND(0) / 4); // Length of game(?)
         for (let I = 0; I <= NUM_PLANETS; I++) {
             for (let J = 1; J <= NUM_PLAYERS; J++) {
-                resources[I, J] = 0;
+                resources[I][J] = 0;
             }
             planetAngle[I] = 6.28 * RND(0);
             resourceSeed = planets[I].resources;
-            resources[I, 0] = INT(resourceSeed * (RND(0) + RND(0) + RND(0) + RND(0)));
+            resources[I][0] = INT(resourceSeed * (RND(0) + RND(0) + RND(0) + RND(0)));
         }
         for (let I = 0; I < NUM_PLAYERS; I++) {
             for (let J = 0; J < NUM_SHIPS; J++) {
@@ -321,7 +335,7 @@
             O[J] = O[K];
             O[K] = S;
         }
-        await delay(2000);
+        await delay(1000);
         for (A = 0; A <= NUM_PLAYERS - 1; A++) {
             P9 = O[A];
             if (S[P9 - 1] != 0) {  // Human player
@@ -361,6 +375,7 @@
                     case 1: await showMap(true); break;
                     case 2: await showMap(false); break;
                     case 3: travelTimes(); break;
+                    case 4: showMining(); break;
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
                 if (C == 11) break;
@@ -381,13 +396,37 @@
                 if (K == 4) { K = 0; print(); }
             }
             if (K > 0) print();
-            p8 = await inputNum("YOUR CHOICE");
-        } while (!(P8 < P6 || P8 > NUM_PLANETS));
+            P8 = await inputNum("YOUR CHOICE");
+        } while (P8 < P6 || P8 > NUM_PLANETS);
         return P8;
     }
 
+    function showMining() {
+        print();
+        print("MINING CONCESSIONS AS OF DAY", D0);
+        printPlain("PLANET");
+        for (J = 0; J <= MAX_PLAYER; J++) {
+            printPlain(TAB(10 + 11 * J), LEFT(B1[J], 9));
+        };
+        printPlain(TAB(10 + 11 * NUM_PLAYERS), "UNCLAIMED");
+        print();
+        printPlain("------");
+        for (J = 0; J <= NUM_PLAYERS; J++) {
+            printPlain(TAB(10 + 11 * J), "=========");
+        };
+        print();
+        for (P = 1; P <= NUM_PLANETS; P++) {
+            printPlain(planets[P].name);
+            for (J = 1; J <= NUM_PLAYERS; J++) {
+                printPlain(TAB(12 + 11 * (J - 1)), resources[P, J]);
+            }
+            printPlain(TAB(12 + 11 * NUM_PLAYERS), resources[P, 0]);
+            print();
+        }
+    }
+
     async function showMap(isLarge) {
-        await selectPlanet(0);
+        J = await selectPlanet(0);
         CLS();
         if (isLarge) S7 = S9; else S7 = S8;
         if (S7 == S8) print("SMALL"); else print("LARGE");
@@ -463,7 +502,7 @@
         print("EXPANSION INTO THE SOLAR SYSTEM.");
         print();
         print("COPYRIGHT 1980 BY AVALON HILL MICROCOMPUTER GAMES");
-        await delay(2000);
+        await delay(1000);
         await initgame();
         await mainLoop();
 
