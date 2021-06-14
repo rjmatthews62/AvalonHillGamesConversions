@@ -1,5 +1,6 @@
 <html>
 <!-- Work in Progress conversion of Planet Miners to html/javascript, using async/await notation to simulate input/delays. -->
+
 <head>
     <title>Planet Miners</title>
 </head>
@@ -12,15 +13,24 @@
         $("#console").html("");
     }
 
-    function print() {
+    function printArgs(args, usecr) {
         var s = "";
-        for (let i = 0; i < arguments.length; i++) {
+        for (let i = 0; i < args.length; i++) {
             if (i > 0) s += " ";
-            s += arguments[i];
+            s += args[i];
         }
         var content = $("#console").html();
-        content += s + "</br>\n";
+        content += s;
+        if (usecr) content += "</br>\n";
         $("#console").html(content);
+    }
+
+    function print() {
+        printArgs(arguments, true);
+    }
+
+    function printNoCr() {
+        printArgs(arguments, false);
     }
 
     function doInputWait() {
@@ -34,13 +44,18 @@
     async function input(prompt) {
         print(prompt);
         $("#enter").show();
-        $("#input").show();
-        $("#input").val("");
-        $("#input").focus();
+        $("#input").show().val("").focus();
         await doInputWait();
         $("#enter").hide();
         $("#input").hide();
         return $("#input").val();
+    }
+
+    async function inputNum(prompt) {
+        let result = await input(prompt);
+        let n = parseInt(result, 10);
+        if (isNaN(n)) n = 0;
+        return n;
     }
 
     function dim(l1, l2) {
@@ -111,6 +126,7 @@
     var P = new Array(MAX_PLAYER + 1);
     var O = new Array(MAX_PLAYER + 1);
     var H = new Array(MAX_PLAYER + 1);
+    var F; // Calculated patrol force.
 
     var D0, D3;
 
@@ -184,6 +200,120 @@
 
     }
 
+    function calcPatrolForce(J) {
+        F = 0;
+        for (L = 0; L <= NUM_PATROLS - 1; L++) {
+            if (S5[L] == J && S6[L] == 0) F = F + 1;
+        }
+        return F;
+    }
+
+    async function mainLoop() {
+        cls();
+        print("WORKING...");
+        S = 0;
+        for (P = 1; P <= NUM_PLANETS; P++) {
+            S = S + resources[P, 0];
+        }
+        if (S == 0 || (D0 > D3 && RND(0) > 0.9)) return; // Game over.
+        T = 0;
+        for (J = 1; J <= NUM_PLANETS; J++) {
+            calcPatrolForce(J);
+            T[J] = resources[J, 0] - 2 * F;
+            for (K = 1; K <= NUM_PLAYERS; K++) {
+                T[J] = T[J] + resources[J, K];
+            }
+            if (T[J] < 0) T[J] = 0;
+            if (J == 3) T[J] = T[J] + 10;
+            T = T + T[J];
+        }
+        Q[0] = 0;
+        for (P = 1; P <= NUM_PLANETS; P++) {
+            Q[P] = Q[P - 1] + resources[P, 0] / S;
+        }
+        Q[0] = S;
+        T[0] = 0;
+        for (P = 1; P <= NUM_PLANETS; P++) {
+            T[P] = T[P - 1] + T[P] / T;
+        }
+        T[0] = T;
+        for (J = 0; J <= NUM_PLAYERS - 1; J++) { // Randomize player order.
+            K = INT(RND(0) * NUM_PLAYERS);
+            S = O[J];
+            O[J] = O[K];
+            O[K] = S;
+        }
+        await delay(2000);
+        for (A = 0; A <= NUM_PLAYERS - 1; A++) {
+            P9 = O[A];
+            if (S[P9 - 1] != 0) {  // Human player
+                cls();
+                print("COMMANDS FOR ", B1[P9 % - 1], " FOR DAY", D0, ":");
+                await processCommands();
+                //1070  GOSUB 1250: IF C% = 11 THEN 1090
+                //1071  GOTO 1070
+                //1080  GOSUB 3410
+                //1090  NEXT 
+            } else computerPlayer();
+        }
+
+    }
+
+    async function processCommands() {
+        let retry = true;
+        for (; ;) {
+            if (retry) {
+                print("SELECT FROM THE FOLLOWING MENU:");
+                print("1.  DISPLAY LARGE SOLAR SYSTEM");
+                print("2.  DISPLAY SMALL SOLAR SYSTEM");
+                print("3.  DISPLAY TRAVEL TIMES");
+                print("4.  DISPLAY MINING INFORMATION");
+                print("5.  DISPLAY SHIPS IN PLANETARY ORBITS");
+                print("6.  DISPLAY STATUS OF YOUR SHIPS");
+                print("7.  SET A SHIP DESTINATION");
+                print("8.  PROTEST A CLAIM");
+                print("9.  ATTEMPT TO CLAIM-JUMP");
+                print("10. ATTEMPT SABOTAGE");
+                print("11. FINISHED COMMANDS FOR TODAY");
+            }
+            C = await inputNum("YOUR COMMAND CHOICE");
+            if (C < 1 || C > 11) retry = true;
+            else {
+                switch (C) {
+                    case 1: await showMap(true); break;
+                    case 2: await showMap(false); break;
+                }
+                //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
+                if (C == 11) break;
+                retry = false;
+            }
+        }
+    }
+
+    async function selectPlanet(startPlanet) {
+        let P6 = startPlanet;
+        do {
+            print("SELECT FROM THE FOLLOWING PLANETS:");
+            K = 0;
+            for (P8 = P6; P8 <= NUM_PLANETS; P8++) {
+                printNoCr("     ", P8, "-", planets[P8].name, " ");
+                K = K + 1;
+                if (K == 4) { K = 0; print(); }
+            }
+            if (K > 0) print();
+            p8 = await inputNum("YOUR CHOICE");
+        } while (!(P8 < P6 || P8 > NUM_PLANETS));
+        return P8;
+    }
+
+    async function showMap(isLarge) {
+        await selectPlanet(0);
+        print("Showmap goes here.", isLarge);
+    }
+
+    function computerPlayer() {
+        //TBA
+    }
     async function game() {
         $("#enter").hide();
         $("#input").hide();
@@ -198,7 +328,7 @@
         print("COPYRIGHT 1980 BY AVALON HILL MICROCOMPUTER GAMES");
         await delay(2000);
         await initgame();
-        print("READY");
+        await mainLoop();
 
     }
 

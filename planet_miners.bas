@@ -85,7 +85,7 @@
 1310  GOTO 3140
 1320  GOTO 2610
 1330  RETURN 
-1340 : REM  rem 
+1340  rem Select Planet.
 1350  PRINT "SELECT FROM THE FOLLOWING PLANETS:"
 1360 K = 0: FOR P8 = P6% TO NUM_PLANETS: PRINT  TAB K * 10 + 1);P8;"-";planetName(P8);" ";
 1370 K = K + 1: IF K = 4 THEN K = 0: PRINT 
@@ -181,7 +181,7 @@
 2310 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2320  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = F% + 1
 2330  NEXT : RETURN 
-2340 : REM  rem 
+2340 rem Calc Patrol force. 
 2350 F% = 0: FOR L = 0 TO NUM_PATROLS - 1: IF S5%(L) = J AND S6%(L) = 0 THEN F% = F% + 1
 2351  NEXT : RETURN 
 2360 : REM  rem 
@@ -292,7 +292,7 @@
 3380 resources(P8,P5%) = resources(P8,P5%) - 1:resources(P8,P9%) = resources(P8,P9%) + 1: RETURN 
 3390  PRINT "THE DASTARDLY ATTEMPT IS THWARTED BY ADROIT POLITICS."
 3400  GOTO 2590
-3410 : REM  rem 
+3410 Rem Computer player
 3420  FOR P7 = 0 TO NUM_SHIPS - 1: IF S3%(P9% - 1,P7) > 0 OR P7 = H%(P9% - 1) THEN 3580
 3430 P8 = S1%(P9% - 1,P7):J = P8: IF resources(P8,0) > 2 *  RND (0) THEN 3580
 3440 D =  RND (0): IF Q(0) > 12 *  RND (0) THEN 3480
