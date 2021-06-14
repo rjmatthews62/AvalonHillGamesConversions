@@ -16,7 +16,7 @@
     }
 
 
-    function printArgs(args, usecr=true, space=true) {
+    function printArgs(args, usecr = true, space = true) {
         var s = "";
         for (let i = 0; i < args.length; i++) {
             if (i > 0 && space) s += " ";
@@ -26,8 +26,8 @@
         content += s;
         linePos += s.length % CHARS_LINE;
         if (usecr) {
-            content += "\n"; 
-            linePos=0;
+            content += "\n";
+            linePos = 0;
         }
         $("#console").html(content);
     }
@@ -129,15 +129,15 @@
         return s.length;
     }
 
-    function MID(s,i,len) {
-        return s.substr(i-1,len);
+    function MID(s, i, len) {
+        return s.substr(i - 1, len);
     }
 
     function TAB(n) {
-        var result="";
-        while (linePos<n-1) {
-            result+=" ";
-            linePos+=1;
+        var result = "";
+        while (linePos < n) {
+            result += " ";
+            linePos += 1;
         }
         return result;
     }
@@ -277,6 +277,15 @@
         return F;
     }
 
+    function calcTravelTime(planet1, planet2) {
+        //4470 rem Travel time calc From J to P8, result returned in S
+        let J = planet1; P8 = planet2;
+        S = SQR(planets[J].distance * planets[J].distance + planets[P8].distance * planets[P8].distance - 2 *
+            planets[P8].distance * planets[J].distance * COS(planetAngle[J] - planetAngle[P8]));
+        S = -  INT(-  SQR(S) * 0.23383161);
+        return S;
+    }
+
     async function mainLoop() {
         cls();
         print("WORKING...");
@@ -351,6 +360,7 @@
                 switch (C) {
                     case 1: await showMap(true); break;
                     case 2: await showMap(false); break;
+                    case 3: travelTimes(); break;
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
                 if (C == 11) break;
@@ -379,7 +389,7 @@
     async function showMap(isLarge) {
         await selectPlanet(0);
         CLS();
-        if (isLarge) S7 = S9; else S7=S8;
+        if (isLarge) S7 = S9; else S7 = S8;
         if (S7 == S8) print("SMALL"); else print("LARGE");
         print("SOLAR SYSTEM CENTERED ON ", planets[J].name);
         X1 = planets[J].distance * COS(planetAngle[J]);
@@ -409,6 +419,33 @@
         }
         updateScreen();
         await input("PRESS ENTER");
+    }
+
+    function travelTimes() {
+        print()
+        print("SOLAR SYSTEM TRAVEL TIMES (DAYS)")
+        print("FROM/TO");
+        for (J = 1; J <= NUM_PLANETS; J++) {
+            printPlain(TAB(8 + 4 * J));
+            printPlain(J);
+        };
+        print()
+        print("---------");
+        for (J = 1; J <= NUM_PLANETS; J++) {
+            printPlain(TAB(8 + 4 * J));
+            printPlain("===");
+        };
+        print();
+        for (J = 1; J <= NUM_PLANETS; J++) {
+            printPlain(J, " ", planets[J].name);
+            for (P8 = 1; P8 <= NUM_PLANETS; P8++) {
+                let ttime = calcTravelTime(J, P8);
+                printPlain(TAB(8 + 4 * P8));
+                printPlain(ttime);
+            };
+            print();
+        };
+        print();
     }
 
     function computerPlayer() {
