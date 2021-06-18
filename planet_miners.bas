@@ -170,7 +170,7 @@
 2190  GOSUB 4470
 2200 S3%(P9% - 1,P7% - 1) = S
 2210 S1%(P9% - 1,P7% - 1) =  - J:S2%(P9% - 1,P7% - 1) = P8: GOTO 1290
-2220 : REM  rem 
+2220 : REM  Calculate effective strength K=family J=planet result=F
 2230 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2240  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = F% + S0%(K - 1,L) * S0%(K - 1,L)
 2250  NEXT :F% =  SQR (F%): RETURN 
@@ -354,7 +354,7 @@
 3900  NEXT : IF P8 = 0 THEN  RETURN 
 3910  GOSUB 4490: GOSUB 2500
 3920  RETURN 
-3930 : REM  rem 
+3930 REM Process Game Turn
 3940 : REM  rem 
 3950  FOR P7 = 0 TO NUM_PATROLS - 1: IF S6%(P7) > 0 THEN 4110
 3960 P8 = S4%(P7):J = P8: IF P8 = 3 OR resources(P8,0) > 0 THEN 4110
@@ -375,7 +375,7 @@
 4090 S =  SQR (orbitRadius(P8) * orbitRadius(P8) + orbitRadius(J) * orbitRadius(J) - 2 * orbitRadius(J) * orbitRadius(P8) *  COS (planetAngle(P8) - planetAngle(J)))
 4100 S6%(P7) =  -  INT ( -  SQR (S) * 0.1654392)
 4110  NEXT 
-4120 : REM  rem 
+4120 REM  Process Actions.
 4130  FOR K = 0 TO NUM_PLAYERS - 1: FOR J = 0 TO NUM_SHIPS - 1: IF S3%(K,J) > 0 THEN S3%(K,J) = S3%(K,J) - 1
 4140  IF S3%(K,J) > 0 OR  ABS (S1%(K,J)) = S2%(K,J) THEN 4180
 4150  PRINT B1$(K);" SHIP ENTERS ORBIT AROUND ";planetName(S2%(K,J));"."
@@ -412,7 +412,7 @@
 4450 D0% = D0% + 1: RETURN 
 
 4455 rem Delay
-4460  FOR X9 = 1 TO 1000: NEXT : PRINT : RETURN 
+4460  FOR X9 = 1 TO 1000: NEXT : PRINT : RETURN : REM Crazy old school...
 
 4365 rem Travel time calc From J to P8, result returned in S
 4470 S =  SQR (orbitRadius(J) * orbitRadius(J) + orbitRadius(P8) * orbitRadius(P8) - 2 * orbitRadius(P8) * orbitRadius(J) *  COS (planetAngle(J) - planetAngle(P8)))

@@ -124,6 +124,11 @@
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    async function pause() {
+        await delay(1000);
+        print();
+    }
+
     function PEEK(addr) {
         if (addr < SCREEN_ADDR || addr >= SCREEN_ADDR + SCREEN_SIZE) return 0;
         return screenMem[addr - SCREEN_ADDR];
@@ -308,7 +313,7 @@
     function calcTravelTime(planet1, planet2) {
         //4470 rem Travel time calc From J to P8, result returned in S
         let J = planet1; P8 = planet2;
-        S = SQR(planets[J].distance * planets[J].distance + planets[P8].distance * planets[P8].distance - 2 *
+        let S = SQR(planets[J].distance * planets[J].distance + planets[P8].distance * planets[P8].distance - 2 *
             planets[P8].distance * planets[J].distance * COS(planetAngle[J] - planetAngle[P8]));
         S = -  INT(-  SQR(S) * 0.23383161);
         return S;
@@ -317,11 +322,11 @@
     async function mainLoop() {
         cls();
         print("WORKING...");
-        S = 0;
+        let tmp = 0;
         for (P = 1; P <= NUM_PLANETS; P++) {
-            S = S + resources[P][0];
+            tmp = tmp + resources[P][0];
         }
-        if (S == 0 || (D0 > D3 && RND(0) > 0.9)) return; // Game over.
+        if (tmp == 0 || (D0 > D3 && RND(0) > 0.9)) return false; // Game over if no resources left or time has run out..
         T = 0;
         for (J = 1; J <= NUM_PLANETS; J++) {
             calcPatrolForce(J);
@@ -335,9 +340,9 @@
         }
         Q[0] = 0;
         for (P = 1; P <= NUM_PLANETS; P++) {
-            Q[P] = Q[P - 1] + resources[P][0] / S;
+            Q[P] = Q[P - 1] + resources[P][0] / tmp;
         }
-        Q[0] = S;
+        Q[0] = tmp;
         T[0] = 0;
         for (P = 1; P <= NUM_PLANETS; P++) {
             T[P] = T[P - 1] + T[P] / T;
@@ -345,11 +350,11 @@
         T[0] = T;
         for (J = 0; J <= NUM_PLAYERS - 1; J++) { // Randomize player order.
             K = INT(RND(0) * NUM_PLAYERS);
-            S = O[J];
+            tmp = O[J];
             O[J] = O[K];
-            O[K] = S;
+            O[K] = tmp;
         }
-        await delay(1000);
+        await pause(1000);
         for (A = 0; A <= NUM_PLAYERS - 1; A++) {
             P9 = O[A];
             if (S[P9 - 1] != 0) {  // Human player
@@ -360,8 +365,12 @@
                 //1071  GOTO 1070
                 //1080  GOSUB 3410
                 //1090  NEXT 
-            } else computerPlayer();
+            } else computerPlayer(P9);
+            print("Thinking...");
+            await delay(1000);
         }
+        processGameTurn();
+        return true;
 
     }
 
@@ -393,6 +402,7 @@
                     case 5: showShipsInOrbit(); break;
                     case 6: showShipStatus(player); break;
                     case 7: await setShipDest(player); break;
+                    default: print("Command not implemented.");
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
                 if (C == 11) break;
@@ -572,16 +582,197 @@
         P6 = 1;
         P8 = await selectPlanet(P6, "DESTINATION:");
         J = ABS(S1[P9 - 1][P7 - 1]);
-        S = calcTravelTime(J, P8);
+        let S = calcTravelTime(J, P8);
         S3[P9 - 1][P7 - 1] = S;  // Travel times
         S1[P9 - 1][P7 - 1] = - J; // From
         S2[P9 - 1][P7 - 1] = P8; // To
         showShipStatus(player);
     }
 
-    function computerPlayer() {
+    function computerPlayer(player) {
         //TBA
+        print("AI Player", player, B1[player - 1]);
     }
+
+    function calcStrength(family, planet) {
+        //Calculate effective strength K=family J=planet result=F
+        let J = planet;
+        let K = family;
+        F = 0;
+        for (let L = 0; L <= NUM_SHIPS - 1; L++) {
+            if ((S1[K - 1, L] == -J) || (S2[K - 1, L] == J && S3[K - 1, L] == 0)) F = F + S0[K - 1, L] * S0[K - 1, L]
+        }
+        F = SQR(F)
+        return F;
+    }
+
+    async function processGameTurn() {
+        //3930
+        //3940
+        //3950
+        for (P7 = 0; P7 <= NUM_PATROLS - 1; P7++) {
+            if (S6[P7] > 0) continue;
+            //3960
+            P8 = S4[P7];
+            J = P8;
+            if (P8 == 3 || resources[P8, 0] > 0) continue;
+            //3970
+            D = RND(0);
+            if (!(Q[0] > 12 * RND(0))) {
+                //3980
+                T = 0;
+                if (P8 = 3) T = 10;
+                //3990
+                for (let S = 0; S <= NUM_PLAYERS; S++) {
+                    T = T + resources[P8, S];
+                }
+                //4000
+                if (T * RND(0) > 1) continue;
+                //4005
+            } else {
+
+                //4010
+                for (let S = 1; S <= NUM_PLANETS; S++) {
+                    if (Q[S] < D) 4030
+                    //4020
+                    P8 = S
+                    S = NUM_PLANETS
+                    //4030
+                }
+                //GOTO 4080
+                //4040
+                if (RND(0) < .25) {
+                    P8 = 3;
+                } else {
+                    //4045
+                    for (let S = 1; S <= NUM_PLANETS; S++) {
+                        if (T[S] >= D) {
+                            //4050
+                            P8 = S;
+                            S = NUM_PLANETS;
+                            //4060
+                        }
+                    }
+                }
+                //4070
+            }
+            //4080
+            S5[P7] = P8;
+            //4090
+            let S = SQR(planets[P8].distance * planets[P8].distance + planets[J].distance * planets[J].distance -
+                2 * planets[J].distance * planets[P8].distance * COS(planetAngle[P8] - planetAngle[J]));
+            //4100
+            S6[P7] = -  INT(-  SQR(S) * 0.1654392);
+            //4110
+
+        }
+        //4120 REM  Process Actions.
+        //4130
+        for (K = 0; K <= NUM_PLAYERS - 1; K++) {
+            for (J = 0; J <= NUM_SHIPS - 1; J++) {
+                if (S3[K][J] > 0) S3[K][J] = S3[K][J] - 1;
+                //4140
+                if (!(S3[K][J] > 0 || ABS(S1[K][J]) == S2[K][J])) { //goto4180
+                    //4150
+                    printPlain(B1[K], " SHIP ENTERS ORBIT AROUND ", planets[S2[K][J]].name, "."); print();
+                    //4170
+                    await pause();
+                    S1[K][J] = S2[K][J];
+                }
+                //4180
+                S1[K][J] = ABS(S1[K][J]);
+            }
+        }
+        //4190
+        for (K = 0; K <= NUM_PATROLS - 1; K++) {
+            if (S6[K] > 0) S6[K] = S6[K] - 1;
+            //4200
+            if (S6[K] > 0) continue;
+            //4210
+            S4[K] = S5[K];
+            //4220
+        }
+        //4230
+        for (L = 0; L <= NUM_PLANETS; L++) {
+            planetAngle[L] = planetAngle[L] + planets[L].velocity; // Move planets in orbit.
+        }
+        //4240
+        //4250
+        for (K = 0; K <= NUM_PLAYERS - 1; K++) {
+            J = INT(RND(0) * NUM_PLAYERS);
+            let S = O[K];
+            O[K] = O[J];
+            O[J] = S;
+        }
+        //4260
+        for (K = 0; K <= NUM_PLAYERS - 1; K++) {
+            J = O[K] - 1;
+            if (P[J] >= 1) continue;
+            //4265
+            P9 = J + 1
+            //4270
+            for (L = 0; L <= NUM_SHIPS - 1; L++) {
+                if (S3[J][L] > 0) continue;
+                //4280
+                P8 = S1[J][L];
+                if (resources[P8][0] == 0 || P[J] >= 1) continue;
+                //4290
+                D = INT(6 * RND(0)) + INT(6 * RND(0));
+                resourceSeed = K;
+                K = P9;
+                X4 = J;
+                J = P8;
+                X5 = L;
+                //4300
+                //GOSUB 2220
+                F = calcStrength(K, J);
+                K = resourceSeed
+                J = X4
+                L = X5
+                D = D + F - 4 * P[J]
+                if (D <= 4) continue;
+                //4305 GOTO 4420
+                //4310
+                print("THE MINING COUNCIL GRANTS A MINING CONCESSION ON");
+                //4320
+                print(planets[P8].name, "TO THE", B1[J], "FAMILY.");
+                //4340
+                await pause(1000);
+                //4350
+                D = INT(6 * RND(0)) + INT(6 * RND(0));
+                K = P9;
+                J = 3;
+                //4360
+                F = calcStrength(K, J);
+                K = resourceSeed;
+                J = X4;
+                L = X5;
+                D = D + F;
+                resources[P8][0] = resources[P8][0]- 1;
+                //4370
+                resources[P8][P9] = resources[P8][P9]+ 1;
+                if (D > 4 && P[J] == 0) continue;
+                //4380
+                print("HOWEVER NO MORE CONCESSIONS WILL BE GRANTED");
+                //4390
+                print("TO THE", B1[J], "FAMILY TODAY.");
+                //4400
+                await pause(1000);
+                //4410
+                P[J] = 1;
+                //4420
+            }
+            //4430
+            if (P[J] > 0) P[J] = P[J] - 1;
+            //4435
+            if (P[J] < 0) P[J] = 0;
+            //4440
+        }
+        //4450
+        D0 = D0 + 1;
+        return;
+    }
+
     async function game() {
         $("#enter").hide();
         $("#input").hide();
@@ -596,8 +787,11 @@
         print("COPYRIGHT 1980 BY AVALON HILL MICROCOMPUTER GAMES");
         await delay(1000);
         await initgame();
-        await mainLoop();
-
+        var running;
+        do {
+            running = await mainLoop();
+        } while (running);
+        print("Game Over");
     }
 
     $(document).ready(game);
