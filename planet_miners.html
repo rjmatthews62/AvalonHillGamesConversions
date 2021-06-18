@@ -198,9 +198,9 @@
     const MAX_PATROLS = NUM_PATROLS - 1;
     const MAX_SHIP = NUM_SHIPS - 1;
     var S0 = dim(MAX_PLAYER, MAX_SHIP);
-    var S1 = dim(MAX_PLAYER, MAX_SHIP);
-    var S2 = dim(MAX_PLAYER, MAX_SHIP);
-    var S3 = dim(MAX_PLAYER, MAX_SHIP);
+    var S1 = dim(MAX_PLAYER, MAX_SHIP);  // Ship From
+    var S2 = dim(MAX_PLAYER, MAX_SHIP); // Ship To
+    var S3 = dim(MAX_PLAYER, MAX_SHIP); // Travel time.
     var S4 = new Array(MAX_PATROLS + 1);
     var S5 = new Array(MAX_PATROLS + 1);
     var S6 = new Array(MAX_PATROLS + 1);
@@ -323,11 +323,11 @@
         cls();
         print("WORKING...");
         let tmp = 0;
-        for (P = 1; P <= NUM_PLANETS; P++) {
+        for (let P = 1; P <= NUM_PLANETS; P++) {
             tmp = tmp + resources[P][0];
         }
         if (tmp == 0 || (D0 > D3 && RND(0) > 0.9)) return false; // Game over if no resources left or time has run out..
-        T = 0;
+        let total = 0;
         for (J = 1; J <= NUM_PLANETS; J++) {
             calcPatrolForce(J);
             T[J] = resources[J][0] - 2 * F;
@@ -336,18 +336,18 @@
             }
             if (T[J] < 0) T[J] = 0;
             if (J == 3) T[J] = T[J] + 10;
-            T = T + T[J];
+            total = total + T[J];
         }
         Q[0] = 0;
-        for (P = 1; P <= NUM_PLANETS; P++) {
+        for (let P = 1; P <= NUM_PLANETS; P++) {
             Q[P] = Q[P - 1] + resources[P][0] / tmp;
         }
         Q[0] = tmp;
         T[0] = 0;
-        for (P = 1; P <= NUM_PLANETS; P++) {
-            T[P] = T[P - 1] + T[P] / T;
+        for (let P = 1; P <= NUM_PLANETS; P++) {
+            T[P] = T[P - 1] + T[P] / total;
         }
-        T[0] = T;
+        T[0] = total;
         for (J = 0; J <= NUM_PLAYERS - 1; J++) { // Randomize player order.
             K = INT(RND(0) * NUM_PLAYERS);
             tmp = O[J];
@@ -369,7 +369,8 @@
             print("Thinking...");
             await delay(1000);
         }
-        processGameTurn();
+        await processGameTurn();
+        await delay(3000)
         return true;
 
     }
@@ -442,7 +443,7 @@
             printPlain(TAB(10 + 11 * J), "=========");
         };
         print();
-        for (P = 1; P <= NUM_PLANETS; P++) {
+        for (let P = 1; P <= NUM_PLANETS; P++) {
             printPlain(planets[P].name);
             for (J = 1; J <= NUM_PLAYERS; J++) {
                 printPlain(TAB(12 + 11 * (J - 1)), resources[P][J]);
@@ -454,6 +455,7 @@
 
     async function showMap(isLarge) {
         J = await selectPlanet(0);
+        var P;
         CLS();
         if (isLarge) S7 = S9; else S7 = S8;
         if (S7 == S8) print("SMALL"); else print("LARGE");
@@ -633,10 +635,11 @@
 
                 //4010
                 for (let S = 1; S <= NUM_PLANETS; S++) {
-                    if (Q[S] < D) 4030
-                    //4020
-                    P8 = S
-                    S = NUM_PLANETS
+                    if (Q[S] < D) { //4030
+                        //4020
+                        P8 = S
+                        S = NUM_PLANETS
+                    }
                     //4030
                 }
                 //GOTO 4080
@@ -710,7 +713,7 @@
             if (P[J] >= 1) continue;
             //4265
             P9 = J + 1
-            //4270
+            //4270 Grant Concession
             for (L = 0; L <= NUM_SHIPS - 1; L++) {
                 if (S3[J][L] > 0) continue;
                 //4280
@@ -748,9 +751,9 @@
                 J = X4;
                 L = X5;
                 D = D + F;
-                resources[P8][0] = resources[P8][0]- 1;
+                resources[P8][0] = resources[P8][0] - 1;
                 //4370
-                resources[P8][P9] = resources[P8][P9]+ 1;
+                resources[P8][P9] = resources[P8][P9] + 1;
                 if (D > 4 && P[J] == 0) continue;
                 //4380
                 print("HOWEVER NO MORE CONCESSIONS WILL BE GRANTED");
