@@ -40,6 +40,7 @@
             linePos = 0;
         }
         $("#console").html(content);
+        window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
     }
 
     function print() {
@@ -73,10 +74,11 @@
         }
     }
 
-    async function input(prompt) {
+    async function input(prompt, adefault = "") {
         print(prompt);
         $("#enter").show();
-        $("#input").show().val("").focus();
+        $("#input").show().val(adefault).focus().select();
+        window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
         await doInputWait();
         $("#enter").hide();
         $("#input").hide();
@@ -127,6 +129,14 @@
     async function pause() {
         await delay(1000);
         print();
+    }
+
+    function planetName(p) {
+        return planets[p].name;
+    }
+
+    function orbitRadius(p) {
+        return planets[p].distance;
     }
 
     function PEEK(addr) {
@@ -201,9 +211,9 @@
     var S1 = dim(MAX_PLAYER, MAX_SHIP);  // Ship From
     var S2 = dim(MAX_PLAYER, MAX_SHIP); // Ship To
     var S3 = dim(MAX_PLAYER, MAX_SHIP); // Travel time.
-    var S4 = new Array(MAX_PATROLS + 1);
-    var S5 = new Array(MAX_PATROLS + 1);
-    var S6 = new Array(MAX_PATROLS + 1);
+    var S4 = new Array(MAX_PATROLS + 1); // Patrols From
+    var S5 = new Array(MAX_PATROLS + 1); // Patrols To
+    var S6 = new Array(MAX_PATROLS + 1); // Patrol Travel time
     var M9 = 15;
     var M8 = 45;
 
@@ -213,12 +223,12 @@
     var S9 = 160;
     var S8 = 75;
     var D4 = 40
-    var B1 = new Array(MAX_PLAYER + 1);
-    var S = new Array(MAX_PLAYER + 1);
-    var P = new Array(MAX_PLAYER + 1);
-    var O = new Array(MAX_PLAYER + 1);
+    var B1 = new Array(MAX_PLAYER + 1); // Player Name
+    var S = new Array(MAX_PLAYER + 1); // Human=1, AI=0
+    var P = new Array(MAX_PLAYER + 1); // Penalties
+    var O = new Array(MAX_PLAYER + 1); // Current playr order.
     var H = new Array(MAX_PLAYER + 1);
-    var F; // Calculated patrol force.
+    var F; // Calculated ship force.
 
     var D0, D3;
 
@@ -265,11 +275,11 @@
             cls();
             print("READY TO INITIALIZE FAMILY", K);
             let A = "";
-            A = await input("WILL A PERSON PLAY THIS FAMILY (Y/N)");
+            A = await input("WILL A PERSON PLAY THIS FAMILY (Y/N)", "N");
             if (A.toLowerCase().startsWith("y")) {
                 print();
                 print();
-                B1[K - 1] = await input("YOUR FAMILY NAME");
+                B1[K - 1] = await input("YOUR FAMILY NAME", B1[K - 1]);
                 print();
                 print();
                 print("WELCOME TO THE YEAR 2050. YOU ARE THE LEADER OF THE");
@@ -281,7 +291,7 @@
                 print("BE MAINTAINING", NUM_PATROLS, "PATROL SPACE SHIPS, JUST TO KEEP");
                 print("EVERYTHING FRIENDLY. GOOD LUCK!");
                 print();
-                await input("PRESS ENTER TO CONTINUE", A);
+                await input("PRESS ENTER TO CONTINUE");
                 S[K - 1] = 1;
             } else {
                 S[K - 1] = 0;
@@ -300,7 +310,7 @@
         return F;
     }
 
-    function calcShipForce(planet, family) {
+    function calcShipForce(planet, family) { //2220
         // line 2300 
         let J = planet;
         let K = family;
@@ -310,6 +320,17 @@
         }
         return (F);
     }
+
+    function findShipNum(planet, family) { //2260
+        F = 0;
+        J = planet;
+        K = family;
+        for (L = 0; L < NUM_SHIPS; L++) {
+            if ((S1[K - 1][L] == -J) || (S2[K - 1][L] == J && S3[K - 1][L] == 0)) F = L + 1;
+        }
+        return F;
+    }
+
     function calcTravelTime(planet1, planet2) {
         //4470 rem Travel time calc From J to P8, result returned in S
         let J = planet1; P8 = planet2;
@@ -370,7 +391,7 @@
             await delay(1000);
         }
         await processGameTurn();
-        await delay(3000)
+        //await delay(3000)
         return true;
 
     }
@@ -403,6 +424,9 @@
                     case 5: showShipsInOrbit(); break;
                     case 6: showShipStatus(player); break;
                     case 7: await setShipDest(player); break;
+                    case 8: await protestClaim(player); break;
+                    case 9: await claimJump(player); break;
+                    case 11: break;
                     default: print("Command not implemented.");
                 }
                 //ON C% GOTO 1270,1280,1770,1870,1990,1290,2120,1300,1310,1320,1330
@@ -427,6 +451,26 @@
             P8 = await inputNum("YOUR CHOICE");
         } while (P8 < P6 || P8 > NUM_PLANETS);
         return P8;
+    }
+
+    async function selectPlayer(player, prompt) {
+        // 1400
+
+        // 1410
+        do {
+            print("SELECT FROM THE FOLLOWING FAMILIES");
+            // 1420
+            for (K = 1; K <= NUM_PLAYERS; K++) {
+                if (K == player) continue;
+                // 1430
+                printPlain(K, "-", B1[K - 1]); print();
+                // 1440
+            }
+            // 1450
+            P5 = await inputNum("YOUR CHOICE");
+        } while (P5 < 1 || P5 == P9 || P5 > NUM_PLAYERS);
+        // 1460
+        return P5;
     }
 
     function showMining() {
@@ -577,7 +621,7 @@
         do {
             P7 = await inputNum("SHIP NUMBER");
         } while (P7 < 1 || P7 > NUM_SHIPS);
-        if ((S3[P9 - 1][P7 - 1] = 0 || S1[P9 - 1][P7 - 1] < 0)) {
+        if (!((S3[P9 - 1][P7 - 1] == 0 || S1[P9 - 1][P7 - 1] < 0))) { // Ship is not en-route. If source is negative, has not departed yet.
             print("NOT ALLOWED ON THAT SHIP.");
             return;
         }
@@ -591,6 +635,266 @@
         showShipStatus(player);
     }
 
+    async function politicalClimate(player) {
+        // 2380
+        printPlain("THE POLITICAL CLIMATE ON EARTH IS ");
+        // 2390
+        if (P[player - 1] >= 1) printPlain("VERY ");
+        // 2400
+        print("INAPPROPRIATE")
+        // 2410
+        print("AT THIS TIME  THE", B1[player - 1], "FAMILY.");
+        await pause();
+        return;
+    }
+
+    async function protestClaim(player) {
+        // 2360
+        // 2370
+        P9 = player;
+        if (P[P9 - 1] != 0) {//2420
+            await politicalClimate(player);
+            return;
+        }
+        // 2420
+        // 2430
+        P6 = 1
+        //GOSUB 1360
+        P8 = await selectPlanet(P6, "PROTEST A CLAIM AT WHICH PLANET?");
+        // 2440
+        // 2450
+        P5 = await selectPlayer(player, "PROTEST A CLAIM OF WHICH FAMILY?");
+        // 2460
+        if (resources[P8][P5] <= 0) {
+            // 2490
+            // 2470
+            printPlain("THE ", B1[P5 - 1], " FAMILY HAS NO CONCESSIONS ON ", planetName(P8), "."); print();
+            // 2480
+            return;
+        }
+        // 2490
+        print("YOUR PROTEST HAS BEEN LODGED.");
+        // 2500
+        print("EARTH'S MINING COUNCIL IS NOW CONSIDERING IT.");
+        // 2510
+        K = P9;
+        J = 3; // Who is on earth.
+        D = INT(6 * RND(0));
+        F = calcStrength(K, J); //GOSUB 2220
+        // 2520
+        D = D + F
+        K = P5
+        F = calcStrength(K, J); //GOSUB 2220
+        // 2530
+        if (F > 0) {
+            print("THIS ATTEMPT IS BEING FOUGHT VIGOROUSLY");
+            printPlain("BY REPRESENTATIVES OF THE ", B1[P5 - 1], " FAMILY."); print();
+        }
+        // 2550
+        D = D - F
+        if (D >= 6) { // 2580
+            // 2555
+            print("THE COUNCIL FINDS A FLAW IN THE CONCESSION.")
+            // 2560
+            print("THE CONCESSION IS MADE PUBLIC AGAIN.")
+            P[P9 - 1] = .5
+            // 2570
+            resources[P8, P5] = resources[P8, P5] - 1
+            resources[P8, 0] = resources[P8, 0] + 1
+            await pause();
+            return;
+        }
+        // 2580
+        print("THE COUNCIL FINDS NO FLAW IN THE CONCESSION.")
+        // 2590
+        P[P9 - 1] = 0.5;
+        if (D > 2) P[P9 - 1] = 1
+        // 2600
+        await politicalClimate(player);
+    }
+
+    async function doSuspicious(player) {
+        print("HOWEVER, THE PERPETRATOR ESCAPES LEAVING SUSPICIONS");
+        print("OF", B1[P9 % - 1], "TAMPERING, BUT NO PROOF.");
+        P[P9 - 1] = 0.5;
+        await pause();
+        await politicalClimate(player);
+    }
+
+    async function claimJump(player) {
+        // 3140
+        // 3150
+        if (P[P9 - 1] > 0) {
+            await politicalClimate(player);
+            return;
+        }
+        // 3160
+        P8 = await selectPlanet(1, "JUMP A CLAIM AT WHICH PLANET?");
+
+        K = P9;
+        J = P8;
+        F = findShipNum(J,K);
+        if (F <= 0) {
+            // 3180
+            print("YOU HAVE NO SHIPS THERE.")
+            return;
+        }
+        P5 = await selectPlayer(player, "ATTEMPT CLAIM-JUMPING AGAINST WHICH FAMILY?"); // 3190
+        if (resources[P8][P5] == 0) {
+            printPlain("THE ", B1[P5 - 1], " FAMILY HAS NO CONCESSIONS ON ", planetName(P8), "."); print();
+            // 2480
+            return;
+        }
+        // 3220
+        print("ATTEMPTING TO TAMPER WITH THE", B1[P5 - 1]);
+        // 3230
+        print("MARKER BEACONS ON", planetName(P8), "...");
+        // 3240
+        D = INT(6 * RND(0)) + INT(6 * RND(0));
+        K = P9
+        J = P8
+        F = calcShipForce(J, K);
+        // 3250
+        D = D + F;
+        K = P5;
+        J = P8;
+        F = findShipNum(J, K);
+        P7 = F
+        F = calcShipForce(J, K);
+        D = D - F;
+        // 3260
+        F = calcPatrolForce(J);
+        // 3270
+        if (D <= 6 + F) {
+            // 3275
+            print("ATTEMPTED TAMPERINNG FAILS.")
+            // 3280
+            if (P7 + F > 0 && D >= 2) await doSuspicious(player); //This could be a bug from the original code
+            else await doCaught(player, P7);
+            // 3285 GOTO 2840
+        } else {
+            // 3290
+            print("THE MARKERS HAVE BEEN SUCCESSFULLY CHANGED.");
+            await pause();
+            // 3300
+            print("THE", B1[P9 - 1], "FAMILY TRIES TO SNEAK A CHANGE");
+            // 3310
+            print("OF OWNERSHIP THROUGH THE MINING COUNCIL.");
+            // 3320
+            D = INT(6 * RND(0)) + INT(6 * RND(0));
+            K = P9;
+            J = 3;
+            F = calcShipForce(J, K);
+            // 3330
+            D = D + F;
+            K = P5;
+            F = calcShipForce(J,K);
+            // 3340
+            if (F > 0) {
+                print("THIS ATTEMPT IS BEING FOUGHT VIGOROUSLY BY");
+                // 3350
+                print("REPRESENTATIVES OF THE", B1[P5 - 1], "FAMILY.");
+            }
+            // 3360
+            D = D - F;
+            if (D >= 7) { //3390
+                // 3370
+                print("THE CONCESSION IS TRANSFERRED.")
+                P[P9 - 1] = 0.5;
+                await pause();
+                // 3380
+                resources[P8, P5] = resources[P8, P5] - 1
+                resources[P8, P9] = resources[P8, P9] + 1
+            } else {
+                // 3390
+                print("THE DASTARDLY ATTEMPT IS THWARTED BY ADROIT POLITICS.");
+                P[P9 - 1] = 0.5;
+                if (D > 2) P[P9 - 1] = 1;
+                await politicalClimate(player);
+            }
+        }
+    }
+
+    async function doCaught(player, ship) {
+        // 2870
+        print("AN AGENT OF THE".B1[P9 - 1], " FAMILY IS CAUGHT.");
+        // 2880
+        P[P9 - 1] = P[P9 - 1] + 1;
+        F = 0;
+        for (K = 0; K <= NUM_PATROLS - 1; K++) {
+            // 2890
+            if ((S4[K] = -P8) || (S5[K] == P8 && S6[K] == 0)) F = K + 1;
+            // 2900
+        }
+        if (F > 0) {//3010
+            // 2910
+            print("AN EARTH PATROL SHIP WILL ESCORT THE AGENT'S SHIP");
+            // 2920
+            print("BACK TO EARTH WHERE THE AGENT WILL BE ARRAIGNED.");
+            // 2930
+            F = F - 1;
+            S4[F] = P8;
+            S5[F] = 3;
+            // 2940
+            let S = SQR(orbitRadius(P8) * orbitRadius(P8) + orbitRadius(3) * orbitRadius(3) - 2 * orbitRadius(P8) * orbitRadius(3) * COS(planetAngle[P8] - planetAngle[3]));
+            // 2950
+            S = -  INT(-SQR(S) * 0.23383161);
+            S6[F] = S;
+            // 2960
+            K = P9;
+            J = P8;
+            F = findShipNum(J, K);
+            F = F - 1;
+            S1[P9 - 1][F] = P8;
+            S2[P9 - 1][F] = 3;
+            // 2970
+            D = INT(6 - D + (6 + 10 * P[P9 - 1]) * RND(0));
+            S3[P9 - 1][F] = S + D;
+
+            // 2980
+            print(B1[P9 - 1], "LAWYERS ARE CONFIDENT THEY CAN GET THE");
+            // 2990
+            print("AGENT AND SHIP RELEASED", D, "DAYS AFTER ARRIVAL.");
+            // 3000
+            await politicalClimate(player);
+        } else {
+            // 3010
+            print("THERE ARE NO EARTH PATROL SHIPS NEAR", planetName(P8), ".");
+            // 3020
+            print("THE", B1[P5 - 1], "FAMILY RUTHLESSLY TAKES VENGEANCE INTO THEIR");
+            // 3030
+            print("OWN HANDS BY TORTURING THE AGENT FOR INFORMATION.");
+            // 3050
+            print("ONE SHIP BREAKS ORBIT TO INTERROGATE THE PRISONER.");
+            // 3060
+            P5 = P5 - 1;
+            P7 = P7 - 1;
+            S0[P5][P7] = S0[P5][P7] + 1;
+            // 3070
+            S1[P5][P7] = P8;
+            S2[P5][P7] = P8;
+            S3[P5][P7] = 1;
+            // 3080
+            print("THE AGENT IS RETURNED AFTER ONE DAY, BUT");
+            // 3090
+            K = P9;
+            J = P8;
+            F = findShipNum(J, K);
+            F = F - 1;
+            // 3100
+            S0[P9 - 1][F] = S0[P9 - 1][F] - 1;
+            S1[P9 - 1][F] = P8;
+            // 3110
+            S2[P9 - 1][F] = P8;
+            D = INT(6 - D + 6 * RND(0));
+            S3[P9 - 1][F] = 1 + D;
+            // 3120
+            print("IT WILL BE", D, "MORE DAYS UNTIL HE RECOVERS.");
+            // 3130
+            await politicalClimate(player);
+        }
+    }
+
     function computerPlayer(player) {
         //TBA
         print("AI Player", player, B1[player - 1]);
@@ -602,18 +906,21 @@
         let K = family;
         F = 0;
         for (let L = 0; L <= NUM_SHIPS - 1; L++) {
-            if ((S1[K - 1, L] == -J) || (S2[K - 1, L] == J && S3[K - 1, L] == 0)) F = F + S0[K - 1, L] * S0[K - 1, L]
+            if ((S1[K - 1][L] == -J) || (S2[K - 1][L] == J && S3[K - 1][L] == 0)) F = F + S0[K - 1][L] * S0[K - 1][L];
         }
         F = SQR(F)
-        return F;
+        return INT(F);
     }
 
     async function processGameTurn() {
         //3930
         //3940
         //3950
+        cls();
+        print("Processing Day", D0);
+        // Allocate patrols. 
         for (P7 = 0; P7 <= NUM_PATROLS - 1; P7++) {
-            if (S6[P7] > 0) continue;
+            if (S6[P7] > 0) continue; // Still travelling
             //3960
             P8 = S4[P7];
             J = P8;
@@ -670,7 +977,7 @@
 
         }
         //4120 REM  Process Actions.
-        //4130
+        //4130 Move player ships/
         for (K = 0; K <= NUM_PLAYERS - 1; K++) {
             for (J = 0; J <= NUM_SHIPS - 1; J++) {
                 if (S3[K][J] > 0) S3[K][J] = S3[K][J] - 1;
@@ -686,13 +993,17 @@
                 S1[K][J] = ABS(S1[K][J]);
             }
         }
-        //4190
+        //4190 Move patrols.
         for (K = 0; K <= NUM_PATROLS - 1; K++) {
-            if (S6[K] > 0) S6[K] = S6[K] - 1;
+            if (S6[K] > 0) {
+                S6[K] = S6[K] - 1;
+                if (S6[K] == 0) {
+                    print("Patrol ship enters orbit around", planets[S5[K]].name);
+                    await pause();
+                }
+            }
             //4200
-            if (S6[K] > 0) continue;
-            //4210
-            S4[K] = S5[K];
+            if (S6[K] == 0) S4[K] = S5[K];
             //4220
         }
         //4230
@@ -700,14 +1011,14 @@
             planetAngle[L] = planetAngle[L] + planets[L].velocity; // Move planets in orbit.
         }
         //4240
-        //4250
+        //4250 // Shuffle player turns
         for (K = 0; K <= NUM_PLAYERS - 1; K++) {
             J = INT(RND(0) * NUM_PLAYERS);
             let S = O[K];
             O[K] = O[J];
             O[J] = S;
         }
-        //4260
+        //4260  Check for connessions.
         for (K = 0; K <= NUM_PLAYERS - 1; K++) {
             J = O[K] - 1;
             if (P[J] >= 1) continue;
@@ -766,13 +1077,15 @@
                 //4420
             }
             //4430
-            if (P[J] > 0) P[J] = P[J] - 1;
+            if (P[J] > 0) P[J] = P[J] - 1; // Reset penalties.
             //4435
             if (P[J] < 0) P[J] = 0;
             //4440
         }
         //4450
         D0 = D0 + 1;
+        await input("Press Enter to Continue");
+        cls();
         return;
     }
 
@@ -804,7 +1117,7 @@
 <body>
     <h1>Planet Miner</h1>
     <pre id="console"></pre>
-    <input type="text" id="input" />
+    <input type="text" id="input" style="text-transform: uppercase;" />
     <button type="button" id="enter">Enter</button>
 </body>
 

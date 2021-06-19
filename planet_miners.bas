@@ -174,7 +174,7 @@
 2230 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2240  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = F% + S0%(K - 1,L) * S0%(K - 1,L)
 2250  NEXT :F% =  SQR (F%): RETURN 
-2260 : REM  rem 
+2260 REM  Find a family ship around a planet(J) f (K)
 2270 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2280  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = L + 1
 2290  NEXT : RETURN 
@@ -185,7 +185,7 @@
 2340 rem Calc Patrol force. 
 2350 F% = 0: FOR L = 0 TO NUM_PATROLS - 1: IF S5%(L) = J AND S6%(L) = 0 THEN F% = F% + 1
 2351  NEXT : RETURN 
-2360 : REM  rem 
+2360  REM  Protest a claim
 2370  IF P(P9% - 1) = 0 THEN 2420
 2380  PRINT "THE POLITICAL CLIMATE ON EARTH IS ";
 2390  IF P(P9% - 1) >  = 1 THEN  PRINT "VERY ";
@@ -264,7 +264,7 @@
 3110 S2%(P9% - 1,F%) = P8:D =  INT (6 - D + 6 *  RND (0)):S3%(P9% - 1,F%) = 1 + D
 3120  PRINT "IT WILL BE";D;"MORE DAYS UNTIL HE RECOVERS."
 3130  GOTO 2380
-3140 : REM  rem 
+3140 rem Claim jump 
 3150  IF P(P9% - 1) > 0 THEN 2380
 3160  PRINT "JUMP A CLAIM AT WHICH PLANET?"
 3170 P6% = 1: GOSUB 1360:K = P9%:J = P8: GOSUB 2260: IF F% > 0 THEN 3190
