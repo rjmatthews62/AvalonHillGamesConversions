@@ -178,7 +178,7 @@
 2270 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2280  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = L + 1
 2290  NEXT : RETURN 
-2300 : REM  rem 
+2300 REM  Number of ships for planet(J) and family(K)
 2310 F% = 0: FOR L = 0 TO NUM_SHIPS - 1
 2320  IF (S1%(K - 1,L) =  - J) OR (S2%(K - 1,L) = J AND S3%(K - 1,L) = 0) THEN F% = F% + 1
 2330  NEXT : RETURN 
