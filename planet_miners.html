@@ -426,6 +426,7 @@
                     case 7: await setShipDest(player); break;
                     case 8: await protestClaim(player); break;
                     case 9: await claimJump(player); break;
+                    case 10: await sabotage(player); break;
                     case 11: break;
                     default: print("Command not implemented.");
                 }
@@ -439,7 +440,7 @@
     async function selectPlanet(startPlanet, prompt = "SELECT FROM THE FOLLOWING PLANETS:") {
         let P6 = startPlanet;
         do {
-            print();
+            print(prompt);
             K = 0;
             for (P8 = P6; P8 <= NUM_PLANETS; P8++) {
                 printPlain(TAB(K * 10 + 1));
@@ -453,12 +454,12 @@
         return P8;
     }
 
-    async function selectPlayer(player, prompt) {
+    async function selectPlayer(player, prompt="SELECT FROM THE FOLLOWING FAMILIES") {
         // 1400
 
         // 1410
         do {
-            print("SELECT FROM THE FOLLOWING FAMILIES");
+            print(prompt);
             // 1420
             for (K = 1; K <= NUM_PLAYERS; K++) {
                 if (K == player) continue;
@@ -496,6 +497,7 @@
             print();
         }
     }
+
 
     async function showMap(isLarge) {
         J = await selectPlanet(0);
@@ -715,7 +717,7 @@
 
     async function doSuspicious(player) {
         print("HOWEVER, THE PERPETRATOR ESCAPES LEAVING SUSPICIONS");
-        print("OF", B1[P9 % - 1], "TAMPERING, BUT NO PROOF.");
+        print("OF", B1[P9 - 1], "TAMPERING, BUT NO PROOF.");
         P[P9 - 1] = 0.5;
         await pause();
         await politicalClimate(player);
@@ -733,7 +735,7 @@
 
         K = P9;
         J = P8;
-        F = findShipNum(J,K);
+        F = findShipNum(J, K);
         if (F <= 0) {
             // 3180
             print("YOU HAVE NO SHIPS THERE.")
@@ -788,7 +790,7 @@
             // 3330
             D = D + F;
             K = P5;
-            F = calcShipForce(J,K);
+            F = calcShipForce(J, K);
             // 3340
             if (F > 0) {
                 print("THIS ATTEMPT IS BEING FOUGHT VIGOROUSLY BY");
@@ -803,8 +805,8 @@
                 P[P9 - 1] = 0.5;
                 await pause();
                 // 3380
-                resources[P8, P5] = resources[P8, P5] - 1
-                resources[P8, P9] = resources[P8, P9] + 1
+                resources[P8][P5] = resources[P8][P5] - 1;
+                resources[P8][P9] = resources[P8][P9] + 1;
             } else {
                 // 3390
                 print("THE DASTARDLY ATTEMPT IS THWARTED BY ADROIT POLITICS.");
@@ -892,6 +894,72 @@
             print("IT WILL BE", D, "MORE DAYS UNTIL HE RECOVERS.");
             // 3130
             await politicalClimate(player);
+        }
+    }
+
+    async function sabotage(player) {
+        // 2610
+        // 2620
+        P9 = player;
+        if (P[P9 - 1] != 0) {
+            // 2630
+            print("THIS IS A BAD TIME TO TRY. PEOPLE ARE SUSPICIOUS OF");
+            // 2640
+            print("THE", B1[P9 - 1], "FAMILY TODAY.");
+            return;
+        }
+        // 2650
+        P8 = await selectPlanet(1, "ATTEMPT SABOTAGE IN ORBIT AROUND WHICH PLANET?");
+        F = findShipNum(P8, player);
+        if (F <= 0) {
+            // 2670
+            print("YOU HAVE NO SHIPS THERE.");
+            return;
+        }
+        // 2680
+        P5 = await selectPlayer(player, "ATTEMPT SABOTAGE AGAINST WHICH FAMILY?");
+        F = findShipNum(P8, P5);
+        if (F <= 0) {
+            // 2710
+            print("NO SHIPS OF THE", B1[P5 - 1], " FAMILY THERE.");
+            return;
+        }
+        // 2720
+        P7 = F; // Record target ship
+        D = INT(6 * RND(0)) + INT(6 * RND(0));
+        // 2730
+        print("A SABOTAGE IS ATTEMPTED AGAINST A SHIP OF THE");
+        // 2740
+        printPlain(B1[P5 - 1], " FAMILY IN ORBIT AROUND ", planetName(P8), ".");
+        // 2750
+        await pause();
+        // 2760
+        F = calcShipForce(P8, player);
+        D = D + F;
+        // 2770
+        F = calcShipForce(P8, P5);
+        D = D - F;
+        F = calcPatrolForce(P8);
+        if (D >= 7 + F) { //2820
+            // 2780
+            print("SABOTAGE SUCCEEDS.", B1[P5 - 1], "SHIP OUT OF CONTROL AND SPINNING");
+            // 2790
+            printPlain("OUT OF ORBIT AROUND ", planetName(P8), ".");
+            // 2800
+            P5 = P5 - 1;
+            P7 = P7 - 1;
+            S3[P5][P7] = INT(D - 6 + 6 * RND(0));
+            // 2810
+            let originalPlanet = ABS(S1[P5][P7]);
+            S1[P5][P7] = 0;
+            S2[P5][P7] = originalPlanet;
+            await pause();
+        } else {
+            // 2820
+            print("THE ATTEMPTED SABOTAGE FAILS.")
+            // 2830
+            if (D < 2) await doCaught(player,P7);
+            else await doSuspicious(player);
         }
     }
 
