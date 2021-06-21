@@ -353,6 +353,36 @@
         return S;
     }
 
+    async function gameOver() {
+        // 4520
+        // 4530
+        var P, L, S;
+        print("THE MINING COUNCIL DECLARES ALL CONCESSIONS CLOSED.");
+        // 4540
+        print("END OF GAME REPORT");
+        showMining();
+        // 4550
+        await input("PRESS ENTER");
+        // 4560
+        printPlain("FAMILY"); printPlain(TAB(15), "CONCESSIONS"); print();
+        // 4570
+        for (P = 0; P <= NUM_PLAYERS - 1; P++) {
+            printPlain(B1[P]);
+            // 4580
+            printPlain(TAB(17));
+            S = 0
+            for (L = 0; L <= NUM_PLANETS; L++) {
+                S = S + resources[L][P + 1];
+            }
+            // 4590
+            print(S);
+        }
+        // 4600
+        print();
+        let A=await input("ANOTHER GAME (Y/N)");
+        return A.toLowerCase().startsWith("y");
+    }
+
     async function mainLoop() {
         cls();
         print("WORKING...");
@@ -854,8 +884,8 @@
 
     async function doCaught(player, ship) {
         // 2870
-        P9=player;
-        print("AN AGENT OF THE",B1[P9 - 1], " FAMILY IS CAUGHT.");
+        P9 = player;
+        print("AN AGENT OF THE", B1[P9 - 1], " FAMILY IS CAUGHT.");
         // 2880
         P[P9 - 1] = P[P9 - 1] + 1;
         F = 0;
@@ -968,7 +998,7 @@
         P5 = target;
         P9 = player;
         P8 = planet;
-        P7=findShipNum(planet,target);
+        P7 = findShipNum(planet, target);
         D = INT(6 * RND(0)) + INT(6 * RND(0));
         // 2730
         print("A SABOTAGE IS ATTEMPTED AGAINST A SHIP OF THE");
@@ -1419,7 +1449,9 @@
             running = await mainLoop();
         } while (running);
         print("Game Over");
-        showMining();
+        if (await gameOver()) {
+            setTimeout(game,100);
+        }
     }
 
     $(document).ready(game);
