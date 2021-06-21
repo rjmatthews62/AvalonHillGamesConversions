@@ -1,0 +1,10 @@
+body {
+    background-color: black;
+    color: #00B000;
+    font-size: larger;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+a:link { color: #00ff00; }
+a:visited {color: #008000;}
+a:hover {color: black; background-color: #008000;}

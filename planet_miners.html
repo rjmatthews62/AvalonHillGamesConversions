@@ -3,6 +3,7 @@
 
 <head>
     <title>Planet Miners</title>
+    <link rel="stylesheet" href="avalon_hill.css">
 </head>
 <script src="jquery-3.6.0.min.js"></script>
 <script>
@@ -575,7 +576,7 @@
             }
         }
         updateScreen();
-        await input("PRESS ENTER");
+        //await input("PRESS ENTER");
     }
 
     function showShipsInOrbit() {
@@ -610,7 +611,7 @@
         // line 1470
         J = player;
         print();
-        printPlain("SHIP STATUS OF ", B1[J - 1], " FAMILY ON DAY", D0); print();
+        print("SHIP STATUS OF", B1[J - 1], "FAMILY ON DAY", D0); print();
         printPlain("SHIP (SKILL)");
         printPlain(TAB(15), "FROM");
         printPlain(TAB(23), "TO");
