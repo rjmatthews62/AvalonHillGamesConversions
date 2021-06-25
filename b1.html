@@ -160,7 +160,7 @@
 
         var N0 = 10, N1 = 20;
         var N2 = N0 + N1;
-        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
+        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO", "MA"];
 
         var targetMap = [{ name: "THULE AFB", lat: 0, long: 0 },
         { name: "ARKHANGELSK", lat: 8261, long: 5922 },
@@ -200,6 +200,7 @@
         var Chase = dim(10, 2);
         var J;
         var A, As, A1, R9, Fs, CM;
+        var T0 = 0;
 
     /*100*/var A9 = 25000, A0 = 100, C0 = 10, S = 4500, P = 6, F9 = 0, T = 0, E = 1.75;
 /*109*/ // RANDOMIZE
@@ -223,8 +224,8 @@
         function findCommand(cmd) {
             cmd = cmd.trim().toUpperCase();
             if (LEN(cmd) < 2) return 0;
-            print(">" + CHR(40));
-            for (let I = 1; I <= 12; I++) {
+            print();
+            for (let I = 1; I <= 13; I++) {
                 if (LEFT(cmd, 2) == Cs[I]) return I;
                 /*305*/
             }
@@ -335,6 +336,38 @@
             endgame();
         }
 
+        function insert(dest, src, pos) {
+            result=dest.substr(0, pos);
+            result+=src;
+            result+=dest.substr(pos + src.length);
+            return result;
+
+        }
+
+        function print_map() {
+            const MAPX = 61;
+            const MAPY = 25;
+            const MAXRANGE = 2000;
+            var map = [];
+            for (let y = 0; y < MAPY; y++) map.push(".".repeat(MAPX));
+            var cx = Math.floor(MAPX / 2);
+            var cy = Math.floor(MAPY / 2);
+            var zoom = (MAPY / 2) / MAXRANGE;
+            for (let i = 0; i <= N2; i++) {
+                if (Tgt[i][3] == 2) continue; // Destroyed.
+                let x = Math.round((Tgt[i][1] - X) * zoom * 3) + cx;
+                let y = Math.round((Tgt[i][2] - Y) * zoom) + cy;
+                if (x < 0 || x >= MAPX || y < 0 || y >= MAPY) continue;
+                let s = Ns[i].substr(0, 2);
+                s = (i <= N0 ? "*" : "+") + s;
+                map[y] = insert(map[y],s,x);
+            }
+            map[cy]=insert(map[cy],"X",cx);
+            cls();
+            for (let i = 0; i < map.length; i++) print(map[i]);
+        }
+
+
         async function game() {
             $("#enter").hide();
             $("#input").hide();
@@ -344,7 +377,8 @@
                 }
             });
 
-/*20*/  print("\n".repeat(8)); printPlain(TAB(9), "** B-1 BOMBER GAME **"); print();
+
+/*20*/  print("\n\n"); printPlain(TAB(9), "** B-1 BOMBER GAME **"); print();
             print();
 /*25*/  printPlain(TAB(10), "COPYRIGHT 1980 BY");
             print();
@@ -368,7 +402,8 @@
 /*150*/  Fs = Fs + CHR(INT(RND(0) * 26) + 65);
             }
             L9 = 0.3;
-            print("\n".repeat(20));
+            print("\n".repeat(5));
+            await delay(1000);
 /*160*/  print("YOU ARE FLYING A B1 BOMBER OUT OF");
 /*161*/  print("THULE AFB. YOU ARE IN AN ALERT STATUS");
 /*162*/  print("ORBITING OVER THE ARCTIC");
@@ -377,8 +412,11 @@
 /*180*/  print("***** FLASH *****");
             print("HOT WAR HOT WAR HOT WAR");
 /*190*/  print();
+            await delay(1000);
+
             printPlain("YOUR PRIMARY TARGET IS ", Ns[T9], "."); print();
 /*192*/  printPlain("YOUR FAIL SAFE CODE IS ", Fs, "."); print();
+            await delay(1000);
             print()
 /*200*/  print("YOUR ALTERNATES ARE:");
             J = 0;
@@ -406,9 +444,9 @@
             print();
             print();
             print("GOOD LUCK!");
-/*285*/  print(">" + CHR(41));
+/*285*/  print();
             do { // Main Loop
-/*290*/  print(">" + CHR(41)); // Don't know what this is meant to do...
+/*290*/  print();
                 showIncoming();
                 print();
                 As = await input("COMMAND");
@@ -427,6 +465,7 @@
 /*317*/  print("PH  TO  LAUNCH PHOENIX MISSILE");
 /*318*/  print("AR  TO  ARM BOMB");
 /*319*/  print("BO  TO  DROP BOMB");
+                    print("MA Print Map");
                     T0 = T + 3 + INT(5 * RND(0)); // Advance time ... possibley as a penalty...?
                     // GOTO 1020; // TODO: Work this out.
                 }
@@ -434,7 +473,12 @@
                 //        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
 
                 switch (CM) {
-/*360*/  case 6: //AL
+                    case 13: // Map
+                        print_map();
+                        addTime();
+                        break;
+                    /*360*/
+                    case 6: //AL
                         A1 = await inputNum("NEW ALTITUDE");
                         if (A1 > A9) A1 = A9;
                         /*361*/
@@ -533,7 +577,7 @@
                             if (Tgt[NN][3] == 2) continue;
                             /*630*/
                             AN = calcAngle(NN);
-                            if (ABS(C - AN) > 45 && ABS(C - AN) < 315) continue; 
+                            if (ABS(C - AN) > 45 && ABS(C - AN) < 315) continue;
                             /*631*/
                             J = RA;
                             I = NN;
@@ -723,7 +767,7 @@
             Y = Y - S * T0 * COS(C * 3.14159 / 180) / 3600;
             T = T3;
             /*1140*/
-            if (F < 0) { fuelOut(); return -1; }
+            if (F < 0) { fuelout(); return -1; }
             /*1150*/
             DE = 0;
             CR = 0;
@@ -785,7 +829,7 @@
                         /*1320*/
                         if (Tgt[NN][3] == 1) {
                             print(Ns[NN], "BASE OUT OF MISSILE RANGE.");
-                            Tgt[NN][3]=0;
+                            Tgt[NN][3] = 0;
                         }
                     }
                 }
@@ -838,10 +882,11 @@
 </head>
 
 <body>
-    <h1>B1 Nuclear Bomber</h1>
+    <h1>B1 Nuclear Bomber </h1>
     <pre id="console"></pre>
     <input type="text" id="input" style="text-transform: uppercase;" />
     <button type="button" id="enter">Enter</button>
+    <p><a href="avalon_hill.html">Home</a></p>
 </body>
 
 </html>
