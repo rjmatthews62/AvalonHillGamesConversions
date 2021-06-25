@@ -1,0 +1,847 @@
+<html>
+
+<head>
+    <title>B1 Nuclear Bomber</title>
+    <link rel="stylesheet" href="avalon_hill.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="jquery-3.6.0.min.js"></script>
+    <script>
+        var linePos = 0; // Estimated cursor position for TAB
+
+        function cls() { // Clear screeen.
+            $("#console").html("=".repeat(64) + "\n");
+        }
+
+        function calcLinePos(s) {
+            var ix = s.lastIndexOf("\n");
+            if (ix < 0) ix = 0;
+            return s.length - ix;
+        }
+
+        function printArgs(args, usecr = true, space = true) {
+            var s = "";
+            for (let i = 0; i < args.length; i++) {
+                if (i > 0 && space) s += " ";
+                s += args[i];
+            }
+            var content = $("#console").html();
+            if (linePos > 0) {
+                let x = calcLinePos(content);
+                while (x++ < linePos) content += " ";
+            }
+            content += s;
+            linePos += s.length;
+            if (usecr) {
+                content += "\n";
+                linePos = 0;
+            }
+            $("#console").html(content);
+            window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
+        }
+
+        function print() {
+            printArgs(arguments, true);
+        }
+
+        function printNoCr() {
+            printArgs(arguments, false);
+        }
+
+        function printPlain() {
+            printArgs(arguments, false, false);
+        }
+
+        function doInputWait() {
+            var p = new Promise((myResolve, myReject) => {
+                $("#enter").click(myResolve);
+            }
+            );
+            return p;
+        }
+
+        async function input(prompt, adefault = "") {
+            print(prompt);
+            $("#enter").show();
+            $("#input").show().val(adefault).focus().select();
+            window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
+            await doInputWait();
+            $("#enter").hide();
+            $("#input").hide();
+            return $("#input").val().toUpperCase();
+        }
+
+        async function inputNum(prompt) {
+            let result = await input(prompt);
+            let n = parseInt(result, 10);
+            if (isNaN(n)) n = 0;
+            return n;
+        }
+
+        function dim(l1, l2) {
+            var result = new Array();
+            for (let i = 0; i <= l1; i++) result.push(new Array(l2 + 1));
+            return result;
+        }
+
+        function RND() {
+            return Math.random();
+        }
+
+        function INT(n) {
+            return Math.floor(n);
+        }
+
+        function SIN(n) {
+            return Math.sin(n);
+        }
+
+        function COS(n) {
+            return Math.cos(n);
+        }
+
+        function ATN(n) {
+            return Math.atan(n);
+        }
+
+        function ABS(n) {
+            return Math.abs(n);
+        }
+
+        function SQR(n) {
+            return Math.sqrt(n);
+        }
+
+        function SGN(n) {
+            if (n < 0) return -1;
+            else if (n > 0) return 1;
+            else return 0;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function pause() {
+            await delay(1000);
+            print();
+        }
+
+        function ASC(c) {
+            if (c == "") c = " ";
+            return c.charCodeAt(0);
+        }
+
+        function CHR(n) {
+            return String.fromCharCode(n);
+        }
+
+        function LEN(s) {
+            return s.length;
+        }
+
+        function MID(s, i, len) {
+            return s.substr(i - 1, len);
+        }
+
+        function LEFT(s, len) {
+            return s.substr(0, len);
+        }
+
+        function TAB(n) {
+            var result = "";
+            while (linePos < (n - 1)) {
+                //result += " ";
+                linePos += 1;
+            }
+            return result;
+        }
+
+        /*5*/
+
+        var N0 = 10, N1 = 20;
+        var N2 = N0 + N1;
+        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
+
+        var targetMap = [{ name: "THULE AFB", lat: 0, long: 0 },
+        { name: "ARKHANGELSK", lat: 8261, long: 5922 },
+        { name: "ASTRAKHAN'", lat: 8631, long: 7947 },
+        { name: "KIYEV", lat: 7391, long: 7467 },
+        { name: "LENINGRAD", lat: 7661, long: 6427 },
+        { name: "MOSKVA", lat: 7956, long: 6937 },
+        { name: "MURMANSK", lat: 8056, long: 5452 },
+        { name: "SEVASTOPOL", lat: 7506, long: 8152 },
+        { name: "SVERDLOVSK", lat: 9311, long: 6682 },
+        { name: "VOLGOGRAD", lat: 8331, long: 7692 },
+        { name: "YEREVAN", lat: 8381, long: 8657 },
+        { name: "DUBOVKA", lat: 8350, long: 7650 },
+        { name: "KHAR'KOV", lat: 8850, long: 7450 },
+        { name: "KONOSHA", lat: 8153, long: 6325 },
+        { name: "LIPETSK", lat: 8100, long: 7210 },
+        { name: "OCHAMCHIRA", lat: 8060, long: 8400 },
+        { name: "ODESSA", lat: 7230, long: 8050 },
+        { name: "ONEGA", lat: 8147, long: 5976 },
+        { name: "PECHENGA", lat: 7976, long: 5410 },
+        { name: "PINSK", lat: 7115, long: 7235 },
+        { name: "PODOL'SK", lat: 7900, long: 7010 },
+        { name: "PSKOV", lat: 7475, long: 6780 },
+        { name: "ROSTOV", lat: 7990, long: 8010 },
+        { name: "SARPA", lat: 8515, long: 7930 },
+        { name: "SYKTYVKAR", lat: 8825, long: 6200 },
+        { name: "TALLINN", lat: 7060, long: 6415 },
+        { name: "TBILISI", lat: 8415, long: 8435 },
+        { name: "UKHTA", lat: 8960, long: 5925 },
+        { name: "VINNITSA", lat: 7200, long: 7585 },
+        { name: "VYBORG", lat: 7575, long: 6300 },
+        { name: "YARAN'SK", lat: 8575, long: 6740 }];
+
+        var Ms = ["SAM", "MIG"];
+        var Ns = new Array(N2 + 1);
+        var Tgt = dim(N2, 3);
+        var Chase = dim(10, 2);
+        var J;
+        var A, As, A1, R9, Fs, CM;
+
+    /*100*/var A9 = 25000, A0 = 100, C0 = 10, S = 4500, P = 6, F9 = 0, T = 0, E = 1.75;
+/*109*/ // RANDOMIZE
+/*110*/  var X = 5500 + RND(0) * 1500;
+        var Y = 3500 + RND(0) * 1000;
+
+        /*670*/
+        function showIncoming() {
+            J = 0;
+            for (let I = 1; I <= 10; I++) {
+                if (Chase[I][1] == 0) continue;
+                /*671*/
+                J = 1;
+                /*680*/
+                printPlain(targetName(Chase[I][1]), " INTERCEPTS IN ", Chase[I][2] - T, " SECONDS."); print();
+                /*690*/
+            }
+            return J;
+        }
+
+        function findCommand(cmd) {
+            cmd = cmd.trim().toUpperCase();
+            if (LEN(cmd) < 2) return 0;
+            print(">" + CHR(40));
+            for (let I = 1; I <= 12; I++) {
+                if (LEFT(cmd, 2) == Cs[I]) return I;
+                /*305*/
+            }
+            return 0;
+        }
+        //Advance time
+        function addTime() {
+            T0 = T + 13 + INT(15 * RND(0));
+        }
+
+        function splitTime(smh) {
+            var t = smh.split(",");
+            var seconds = 0, mult = 1;
+
+            for (let i = 0; i < t.length && i < 3; i++) {
+                let n = parseInt(t[i], 10);
+                if (isNaN(n)) n = 0;
+                seconds = seconds + (n * mult);
+                mult *= 60;
+            }
+            return seconds;
+        }
+
+        function targetName(n) {
+            return ((n > 10) ? Ms[1] : Ms[0]) + "-" + n;
+        }
+
+        function findDestination(dest) {/*1760*/
+            NN = -1;
+            As = As.trim().toUpperCase();
+            for (let L = 0; L <= N2; L++) {
+                if (As == LEFT(Ns[L], 2)) {
+                    NN = L;
+                    return NN;
+                    /*1770*/
+                }
+            }
+            return -1;
+        }
+
+        function calcDistance(dest) {/*1710*/
+            NN = dest;
+            RA = SQR(Math.pow(X - Tgt[NN][1], 2) + Math.pow((Y - Tgt[NN][2]), 2));
+            return RA;
+        }
+
+        function bb(abool) {
+            return abool ? -1 : 0;
+        }
+
+        function calcAngle(dest) {/*1600*/
+            NN = dest;
+            DX = X - Tgt[NN][1];
+            DY = Y - Tgt[NN][2];
+            if (DY == 0) { AN = 90 - 180 * (DX > 0); return AN; }
+            AN = ATN(-DX / DY) * 180 / 3.1415 - 180 * bb(DY < 0) + 360 * bb(DX > 0) * bb(DY > 0);
+            return AN;
+
+        }
+
+        function showNavigation(dest) {
+            NN = dest;
+            RA = calcDistance(NN);
+            AN = calcAngle(NN);
+            printPlain(Ns[NN], " BEARS ", INT(AN * 10) / 10, "T RANGE ", INT(RA), "KM."); print();
+        }
+
+        function endgame() {
+            /*1510*/
+            print("MISSION SUMMARY:");
+            if (T8 != 0) {
+                /*1520*/
+                if (T8 == T9) printPlain("PRIMARY");
+                /*1530*/
+                else printPlain("SECONDARY");
+                /*1535*/
+                print(" TARGET,", Ns[T8], "DESTROYED.");
+            }
+            /*1540*/
+            print("DEFENSE COMPLEXES DESTROYED:");
+/*1550*/  J = 0;
+            for (I = N0 + 1; I <= N2; I++) {
+                if (Tgt[I][3] != 2) continue;
+/*1551*/  printPlain(TAB(4), Ns[I]); print();
+                J = 1;
+                /*1560*/
+            }
+            if (J == 0) { printPlain(TAB(4), "NONE"); print(); }
+/*1570*/  if (R9 == 1) print("CREW WILL DIE FROM RADIATION EXPOSURE.");
+/*1580*/  if (R9 == 2) print("CREW DEAD.");
+
+        }
+
+        function crash() {
+        /*1470*/  print("B1 CRASHES IN TO  HILLSIDE.");
+            R9 = 2;
+            endgame();
+
+        }
+
+        function fuelout() {
+        /*1490*/  print("B1 RUNS OUT OF FUEL.");
+            crash();
+        }
+        function destroyed() {
+            print("B1 DESTROYED.");
+            R9 = 2;
+            endgame();
+        }
+
+        async function game() {
+            $("#enter").hide();
+            $("#input").hide();
+            $('#input').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#enter').click();
+                }
+            });
+
+/*20*/  print("\n".repeat(8)); printPlain(TAB(9), "** B-1 BOMBER GAME **"); print();
+            print();
+/*25*/  printPlain(TAB(10), "COPYRIGHT 1980 BY");
+            print();
+            printPlain(TAB(13), "AVALON HILL");
+/*27*/  printPlain(TAB(9), "MICROCOMPUTER GAMES");
+/*40*/  for (let I = 0; I <= N2; I++) {
+                Ns[I] = targetMap[I].name;
+                Tgt[I][1] = targetMap[I].lat;
+                Tgt[I][2] = targetMap[I].long;
+            }
+/*120*/  for (I = 1; I <= N2; I++) {
+                Tgt[I][3] = 0;
+            }
+            A = INT(25000 * RND(0)), A1 = A, R9 = 0;
+/*130*/  C = INT(RND(0) * 360), C1 = C, T9 = INT(RND(0) * N0 + 1), T8 = 0, F = 18500;
+/*140*/  for (I = 1; I <= 10; I++) {
+                Chase[I][1] = 0;
+            }
+            Fs = "";
+            for (I = 1; I <= 5; I++) {
+/*150*/  Fs = Fs + CHR(INT(RND(0) * 26) + 65);
+            }
+            L9 = 0.3;
+            print("\n".repeat(20));
+/*160*/  print("YOU ARE FLYING A B1 BOMBER OUT OF");
+/*161*/  print("THULE AFB. YOU ARE IN AN ALERT STATUS");
+/*162*/  print("ORBITING OVER THE ARCTIC");
+            print();
+            await (delay(2000));
+/*180*/  print("***** FLASH *****");
+            print("HOT WAR HOT WAR HOT WAR");
+/*190*/  print();
+            printPlain("YOUR PRIMARY TARGET IS ", Ns[T9], "."); print();
+/*192*/  printPlain("YOUR FAIL SAFE CODE IS ", Fs, "."); print();
+            print()
+/*200*/  print("YOUR ALTERNATES ARE:");
+            J = 0;
+            for (I = 1; I <= N0; I++) {
+                if (I == T9) continue;
+/*210*/  J = J + 1;
+                printPlain(TAB(12 * (J - 1) + 1), Ns[I]);
+                if (J < 3) continue;
+/*220*/  J = 0;
+                if (I < 9) print();
+                /*230*/
+            }
+            print();
+            print();
+/*240*/  print("SOVIET DEFENSE COMPLEXES ARE:");
+/*250*/  J = 0;
+            for (I = N0 + 1; I <= N2; I++) {
+                J = J + 1
+/*260*/  printPlain(TAB(12 * (J - 1) + 1), Ns[I]);
+                if (J < 3) continue;
+/*270*/  J = 0;
+                print()
+                /*280*/
+            }
+            print();
+            print();
+            print("GOOD LUCK!");
+/*285*/  print(">" + CHR(41));
+            do { // Main Loop
+/*290*/  print(">" + CHR(41)); // Don't know what this is meant to do...
+                showIncoming();
+                print();
+                As = await input("COMMAND");
+                CM = findCommand(As);
+                if (CM <= 0) {
+/*310*/  print("LEGAL COMMANDS ARE:");
+                    print("CO  TO  CHANGE COURSE");
+/*311*/  print("AL  TO  CHANGE ALTITUDE");
+                    print("ST  TO  GET A STATUS REPORT");
+/*312*/  print("RA  TO  GET A RADAR REPORT");
+                    print("NA  TO  GET NAVIGATION DATA ");
+/*313*/  print("SE  TO  SEARCH FOR  A DEFENSE COMPLEX");
+/*314*/  print("AU  TO  HAVE AU TO PILOT FLY PLANE");
+/*315*/  print("EV  TO  CONDUCT EVASIVE ACTION");
+/*316*/  print("EC  TO  USE ECM");
+/*317*/  print("PH  TO  LAUNCH PHOENIX MISSILE");
+/*318*/  print("AR  TO  ARM BOMB");
+/*319*/  print("BO  TO  DROP BOMB");
+                    T0 = T + 3 + INT(5 * RND(0)); // Advance time ... possibley as a penalty...?
+                    // GOTO 1020; // TODO: Work this out.
+                }
+                /*350*/  // ON  CM GOTO 430, 970, 740, 820, 560, 360, 380, 700, 650, 610, 390, 470
+                //        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
+
+                switch (CM) {
+/*360*/  case 6: //AL
+                        A1 = await inputNum("NEW ALTITUDE");
+                        if (A1 > A9) A1 = A9;
+                        /*361*/
+                        if (A1 < A0) A1 = A0;
+                        /*370*/
+                        addTime();
+                        break;
+                    case 7: //CO
+                        /*380*/
+                        C1 = await inputNum("NEW COURSE");
+                        addTime();
+                        break;
+
+/*390*/  case 11: //AR
+                        if (F9 == 2) {
+                    /*420*/  print("BOMB ALREADY DROPPED.");
+                        } else {
+
+                            /*391*/
+                            As = await input("FAIL SAFE CODE");
+                            if (As = Fs) F9 = 1;
+                            /*400*/
+                            if (F9 == 0) {
+                                /*410*/
+                                print("WRONG CODE.");
+                            } else {
+                                /*401*/
+                                print("BOMB ARMED.");
+                                L9 = 10 * L9;
+                            }
+                        }
+                        addTime();
+                        break;
+                    case 1: // AU
+                        /*430*/
+                        As = await input("TIME FOR  AUTO PILOT (S,M,H)? ");
+                        T2 = splitTime(As);
+                        break;
+                    case 12: //BO
+                        if (F9 == 2) print("BOMB ALREADY DROPPED.");
+                        else if (F9 == 0) print("BOMB NOT ARMED.");
+                        else {
+                            As = await input("TARGET");
+                            NN = findDestination(As);
+                            if (!((NN == -1) || (NN > N0))) {//540
+                                /*490*/
+                                RA = calcDistance(NN);// GOSUB 1710
+                                if (RA <= 250) {//550
+                                    /*491*/
+                                    As = await input("CONFIRM DROP (Y/N)");
+                                    if (LEFT(As, 1) == "Y") {
+                                        await delay(2000);
+                                        print(Ns[NN], "DESTROYED.");
+                                        L9 = L9 / 15;
+                                        T8 = NN;
+                                        S = S + 250;
+                                        A0 = A0 + 50;
+                                        F9 = 2;
+                                        T0 = T + 3 + INT(5 * RND(0));
+                                        break;
+                                    }
+                                } else {/*550*/
+                                    print(Ns[NN], "NOT IN RANGE.")
+                                }
+                            } else {
+                                /*540*/
+                                print("IMPROPER TARGET.");
+                            }
+                        };
+                        addTime();
+                        break;
+                    case 5: //NA
+                        /*560*/
+                        As = await input("WHERE TO");
+                        NN = findDestination(As)
+                        if (NN >= 0) {
+                            /*580*/ // GOSUB 1710
+                            //      GOSUB 1600
+                            /*581*/
+                            showNavigation(NN);
+                        } else {
+                            /*600*/
+                            print("NOT ON THE MAP.")
+                        }
+                        /*590*/
+                        T0 = T + 40 + INT(41 * RND(0));
+                        break;
+                    case 10: // SE
+                        /*610*/
+                        I = 0;
+                        J = 10000;
+                        for (NN = N0 + 1; NN <= N2; NN++) {
+                            RA = calcDistance(NN);
+                            if (RA > J) continue;
+                            /*620*/
+                            if (Tgt[NN][3] == 2) continue;
+                            /*630*/
+                            AN = calcAngle(NN);
+                            if (ABS(C - AN) > 45 && ABS(C - AN) < 315) continue; 
+                            /*631*/
+                            J = RA;
+                            I = NN;
+                            /*640*/
+                        }
+                        NN = I
+                        if (NN > 0) showNavigation(NN);
+                        else print("NO COMPLEX FOUND.")
+                        T0 = T + 40 + INT(41 * RND(0));
+                        break;
+                    /*650*/
+                    case 9: //RA
+                        print("CONTACTS:");
+                        showIncoming();
+                        if (J == 0) print("   NO CONTACTS.");
+                        /*660*/
+                        T0 = T + 5 + INT(RND(0) * 11);
+                        break;
+                    case 8: // ST
+
+                        /*700*/
+                        printPlain("COURSE ", INT(C), "T     SPEED ", S, "KPH"); print();
+                        /*710*/
+                        printPlain("ALTITUDE ", A, "M FUEL ", F, "KM"); print();
+                        /*720*/
+                        if (F9 != 2) { printPlain("PRIMARY TARGET: ", Ns[T9]); print(); }
+                        /*730*/
+                        print(P, "PHOENIX LEFT.");
+                        T0 = T + 20 + INT(RND(0) * 21);
+                        break;
+                    /*740*/
+                    case 3: // EV
+                        A1 = 200 + INT(300 * RND(0));
+                        if (RND(0) < .5) A1 = -A1;
+                        A = A + A1; // Randomly change Altitude
+                        if (A < 0) { crash(); return; }
+                        A1 = A;
+                        C1 = 60 + INT(60 * RND(0));
+                        /*760*/
+                        if (RND(0) > 0.5) C1 = -C1;
+                        /*761*/
+                        C = C + C1;
+                        C = C + 360 * bb(C > 360) - 360 * bb(C < 0);
+                        /*770*/
+                        C1 = C;
+                        for (I = 1; I <= 10; I++) {
+                            if (Chase[I][1] == 0) {
+                                /*780*/
+                                J = (8 - 2 * (Chase[I][1] < 10)) / (Chase[I][2] - T);
+                                if (J > 0.95) J = 0.95;
+                                /*790*/
+                                if (RND(0) <= J) {//810
+                                    /*791*/
+                                    print(targetName(Chase[I][1]), "LOSES TARGET");
+                                    /*800*/
+                                    if (Chase[I][1] > 10) printPlain("  - RETURNS  TO  BASE");
+                                    /*801*/
+                                    print(".");
+                                    Chase[I][1] = 0;
+                                    /*810*/
+                                }
+                            }
+                        }
+                        T0 = T + 10 + INT(21 * RND(0));
+                        break;
+/*820*/  case 4: //PH
+                        if (P > 0) {
+                            let ok = true;
+                            As = await input("PHOENIX MISSILE ARMED. TARGET");
+                            if (LEN(As) > 3) As = LEFT(As, 3)
+                            if (!(As == "M" || As == "MIG" || As == "S" || As == "SAM")) {
+                                if (As == "N" || As == "NONE") NN = -1;
+                                else {
+                                    As = LEFT(As, 2);
+                                    NN = findDestination(A2);
+                                }
+                                if (NN < N0 + 1) {
+                                    print("INVALID TARGET.");
+                                    ok = false;
+
+                                }
+                                if (ok) {
+                                    RA = calcDistance(NN);
+                                    if (RA > 200) {
+                                        print(Ns[NN], "OUT OF RANGE.");
+                                    } else {
+                                        print("PHOENIX AWAY!");
+                                        Tgt[NN][3] = 2;
+                                        P = P - 1;
+                                        print(Ns[NN], "DEFENSE COMPLEX DESTROYED.");
+                                        /*860*/
+                                    }
+                                }
+                            } else { // Target interceptors
+
+                                /*900*/
+                                J = 10000;
+                                K = 0;
+                                for (I = 1; I <= 10; I++) {
+                                    if (Chase[I][1] == 0) continue;
+                                    /*910*/
+                                    if (Chase[I][2] - T > J) continue;
+                                    J = Chase[I][2] - T;
+                                    K = I;
+                                    /*920*/
+                                }
+                                print("PHOENIX AWAY!");
+                                P = P - 1;
+                                if (!(K == 0 || J > 10 || (Chase[K][1] < 10 && RND(0) > 0.6))) {
+                                    /*930*/
+
+                                    print(targetName(Chase[K][1]), "DESTROYED!");
+                                    Chase[K][1] = 0;
+                                } else {
+                                    /*960*/
+                                    print("MISSED!");
+                                }
+                            }
+                        } else {
+                            /*870*/
+                            print("NO MORE MISSILES!")
+                        }
+                        T0 = T + 3 + INT(5 * RND(0));
+                        break;
+/*970*/  case 2:  // EV
+                        for (I = 1; I <= 10; I++) {
+                            if (Chase[I][1] == 0) continue;
+                            J = E * (0.5 + 5 / (Chase[I][2] - T));
+                            if (J > .97) J = .97;
+                            if (RND(0) <= J) {
+                                printPlain(targetName(Chase[I][1]) + " ");
+                                if (Chase[I][1] > 10) print("LOSES TARGET - RETURNS  TO  BASE.");
+                                else print(" SELF DESTRUCTS.");
+                                Chase[I][1] = 0;
+                            }
+                        }
+                        E = E * (0.7 + .3 * RND(0));
+                        T0 = T + 3 + INT(5 * RND(0));
+                        break;
+                } // Command Switch
+                var ret = 0;
+                do {
+                    ret = await processTurn();
+                    if (ret < 0) return; // Game is over.
+                } while (ret == 0); // Process autopilot until something happens.
+            } while (true);
+        }
+
+        async function processTurn() {
+            /*1020*/
+            T3 = T0; // Process turn
+            I9 = 1;
+            if (T0 <= T) {
+                I9 = 0;
+                T3 = INT(RND(0) * 301) + T;
+                for (I = 1; I <= 10; I++) { // Process Enemy list
+                    if (Chase[I][1] == 0) continue;
+                    if (Chase[I][2] < T3) T3 = Chase[I][2];
+                    if (T >= Chase[I][2] - 10) continue;
+                    if (Chase[I][2] - 10 < T3) T3 = Chase[I][2] - 10;
+                }
+                if (!((T2 <= T) || (T3 < T2))) {
+                    T3 = T2;
+                    I9 = 1;
+                }
+            }
+            /*1060*/
+            T0 = T3 - T;
+            A2 = A0 * T0;
+            C2 = C0 * T0;
+            /*1070*/
+            if (A2 > ABS(A - A1)) A = A1; // Adjust Altitude
+            /*1071*/
+            if (A2 <= ABS(A - A1)) A = A + A2 * SGN(A1 - A);
+            /*1080*/
+            if (C2 > ABS(-360 * bb(ABS(C - C1) > 180) - ABS(C - C1))) C = C1;
+            else {
+                /*1090*/
+                C = C + C2 * SGN(C1 - C);
+                C = C - 360 * bb(C < 0) + 360 * bb(C > 360);
+            }
+            /*1110*/
+            X = X + S * T0 * SIN(C * 3.14159 / 180) / 3600; // Move 
+            /*1120*/
+            F = F - INT(S * (T3 - T) / 3600);
+            /*1130*/
+            Y = Y - S * T0 * COS(C * 3.14159 / 180) / 3600;
+            T = T3;
+            /*1140*/
+            if (F < 0) { fuelOut(); return -1; }
+            /*1150*/
+            DE = 0;
+            CR = 0;
+            for (I = 1; I <= 10; I++) {
+                if ((Chase[I][1] == 0) || (DE == 1) || (CR == 1)) continue;
+                if (Chase[I][2] <= T) {
+                    print("NUCLEAR AIRBURST!!!");
+                    R9 = 1;
+                    Chase[I][1] = 0;
+                    I9 = 1;
+                    A = A + INT(3000 * RND(0)) * SGN(.5 - RND(0));
+                    if (A < 0) CR = 1;
+                    A1 = A;
+                    F = INT(F * RND(0));
+                    S = INT(S * (.5 + .5 * RND(0)));
+                    /*1190*/
+                    if (RND(0) < .15) DE = 1;
+                    /*1191*/
+                } else if (Chase[I][2] <= T + 10) {
+                    print(targetName(Chase[I][1]), "IN PHOENIX RANGE.");
+                    I9 = 1;
+                }
+                /*1210*/
+            }
+            if (CR == 1) { crash(); return -1; }
+            if (DE == 1) { destroyed(); return -1; }
+            if (F9 != 2) {
+                for (NN = 1; NN <= N0; NN++) {
+                    RA = calcDistance(NN);
+                    if (RA <= 250 && Tgt[NN][3] == 0) {
+                        /*1230*/
+                        print(Ns[NN], " IN BOMB RANGE.")
+                        Tgt[NN][3] = 1;
+                        I9 = 1;
+                    }
+                    /*1240*/
+                    if (Tgt[NN][3] == 1 && RA >= 250) {
+                        print(Ns[NN], " NO LONGER IN BOMB RANGE.");
+                        Tgt[NN][3] = 0;
+                    }
+                    /*1260*/
+                }
+            }
+            /*1270*/ // Base and Phoenix range
+            for (NN = N0 + 1; NN <= N2; NN++) {
+                if (Tgt[NN][3] == 2) continue;
+                if (ABS(X - Tgt[NN][1]) > 750) continue;
+                if (ABS(Y - Tgt[NN][2]) > 750) continue;
+                RA = calcDistance(NN);
+                if (RA > 750) continue;
+                if (P > 0) { // Still have Phoenix missiles.
+                    if (RA <= 200) {
+                        if (Tgt[NN][3] != 1) {
+                            Tgt[NN][3] = 1;
+                            print(Ns[NN], "BASE IN PHOENIX RANGE.");
+                            I9 = 1;
+                        }
+                    } else {
+                        /*1320*/
+                        if (Tgt[NN][3] == 1) {
+                            print(Ns[NN], "BASE OUT OF MISSILE RANGE.");
+                            Tgt[NN][3]=0;
+                        }
+                    }
+                }
+                /*1340*/ // Decide to launch intercepters. Threat level increases when bomb armed. Low altitude reduces.
+                if (RND(0) > L9 * (T0 / 300) * (Math.pow(A, 0.125))) continue;
+                /*1350*/
+                J = 0;
+                for (K = 1; K <= 10; K++) {
+                    if (Chase[K][1] == 0) J = K;
+                    /*1351*/
+                }
+                if (J == 0) continue;
+/*1360*/  if (RND(0) <= 0.5) {
+/*1370*/  Chase[J][1] = INT(9 * RND(0) + 1);
+                    M = 6500;
+                } else {
+                    Chase[J][1] = 21 + 2 * INT(RND(0) * 7);
+                    M = 5000;
+                }
+                AN = calcAngle(NN);
+                L = (AN - C) * 3.1415 / 180;
+                L = SQR(M * M - Math.pow((S * SIN(L)), 2)) + SGN(-ABS(L)) * ABS(S * COS(L)); // TODO: Check logic.
+                RA = calcDistance(NN);
+                Chase[J][2] = T + INT((3600 * RA / L) + 1);
+                printPlain(Ns[NN], " LAUNCHES A ", targetName(Chase[J][1]), "."); print();
+                I9 = 1;
+                /*1440*/
+            }
+            NN = 0;
+            AN = calcAngle(NN);
+            RA = calcDistance(NN);
+            L = ABS(C - AN);
+            if ((L < 30 || L > 330) && RA < 6500 && T > 2000) {
+                NN = 0;
+                RA = calcDistance(NN);
+                if (RA >= F) {
+                    print("B1 REFUELS FROM TANKER AIRCRAFT.");
+                    await delay(2000);
+                }
+                print("B1 LANDS AT THULE AFB.");
+                print("MISSION COMPLETE.");
+                return -1;
+            }
+            return I9; // If I9 is not zero, interrupt has occurred.
+        }
+
+        $(document).ready(game);
+
+    </script>
+</head>
+
+<body>
+    <h1>B1 Nuclear Bomber</h1>
+    <pre id="console"></pre>
+    <input type="text" id="input" style="text-transform: uppercase;" />
+    <button type="button" id="enter">Enter</button>
+</body>
+
+</html>
