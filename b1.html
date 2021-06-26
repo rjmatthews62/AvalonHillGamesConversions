@@ -160,7 +160,8 @@
 
         var N0 = 10, N1 = 20;
         var N2 = N0 + N1;
-        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO", "MA", "ZO"];
+        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
+        var CsEhanced = ["MA", "ZO"];
 
         var targetMap = [{ name: "THULE AFB", lat: 0, long: 0 },
         { name: "ARKHANGELSK", lat: 8261, long: 5922 },
@@ -197,6 +198,9 @@
         const MAP_MAXRANGE = 4000; // Map maximum range
         const MAP_MINRANGE = 500; // Map minimum range
         var mapscale = Math.floor(MAP_MAXRANGE / 2);
+
+        var enhanced = false;
+
 
         var Ms = ["SAM", "MIG"];
         var Ns = new Array(N2 + 1);
@@ -349,7 +353,7 @@
 
         }
 
-        function print_map() {
+        function printMap() {
             const MAPX = 61;
             const MAPY = 25;
             var map = [];
@@ -382,7 +386,7 @@
             if (n < MAP_MINRANGE) n = MAP_MINRANGE;
             if (n > MAP_MAXRANGE) n = MAP_MAXRANGE;
             mapscale = n;
-            print_map();
+            printMap();
         }
 
         function pad(s, n, fill) {
@@ -401,6 +405,14 @@
             return result;
         }
 
+        function checkParams() {
+            var q = window.location.search;
+            var params = new URLSearchParams(q);
+            if (params.get("enhanced") > 0) {
+                enhanced = true;
+                Cs = Cs.concat(CsEhanced);
+            }
+        }
 
         async function game() {
             $("#enter").hide();
@@ -410,6 +422,7 @@
                     $('#enter').click();
                 }
             });
+            checkParams();
 
 
 /*20*/  print("\n\n"); printPlain(TAB(9), "** B-1 BOMBER GAME **"); print();
@@ -417,7 +430,8 @@
 /*25*/  printPlain(TAB(10), "COPYRIGHT 1980 BY");
             print();
             printPlain(TAB(13), "AVALON HILL"); print();
-/*27*/  printPlain(TAB(9), "MICROCOMPUTER GAMES");
+/*27*/  printPlain(TAB(9), "MICROCOMPUTER GAMES"); print();
+            if (enhanced) print("  with Enhanced Mapping Features");
 /*40*/  for (let I = 0; I <= N2; I++) {
                 Ns[I] = targetMap[I].name;
                 Tgt[I][1] = targetMap[I].lat;
@@ -499,7 +513,7 @@
                     print("PH  TO  LAUNCH PHOENIX MISSILE");
                     print("AR  TO  ARM BOMB");
                     print("BO  TO  DROP BOMB");
-                    print("MA Print Map | ZO Zoom Map");
+                    if (enhanced) print("MA Print Map | ZO Zoom Map");
                     T0 = T + 3 + INT(5 * RND(0)); // Advance time
                     // GOTO 1020; // TODO: Work this out.
                 }
@@ -508,7 +522,7 @@
 
                 switch (CM) {
                     case 13: // Map : Note, map functions are my custom additions.
-                        print_map();
+                        printMap();
                         addTime();
                         break;
                     case 14: // Zoom Map
@@ -567,8 +581,10 @@
                                     /*491*/
                                     As = await input("CONFIRM DROP (Y/N)");
                                     if (LEFT(As, 1) == "Y") {
+                                        print("BOMB LAUNCHED.");
                                         await delay(2000);
                                         print(Ns[NN], "DESTROYED.");
+                                        Tgt[NN][3]=2;
                                         L9 = L9 / 15;
                                         T8 = NN;
                                         S = S + 250;
@@ -634,7 +650,7 @@
                         T0 = T + 5 + INT(RND(0) * 11);
                         break;
                     case 8: // ST /*700*/
-                        print("MISSION CLOCK:", missionTime());
+                        if (enhanced) print("MISSION CLOCK:", missionTime());
                         printPlain("COURSE ", INT(C), "T     SPEED ", S, "KPH"); print();
                         printPlain("ALTITUDE ", A, "M FUEL ", F, "KM"); print();
                         if (F9 != 2) { printPlain("PRIMARY TARGET: ", Ns[T9]); print(); }
@@ -657,21 +673,20 @@
                         /*770*/
                         C1 = C;
                         for (I = 1; I <= 10; I++) {
-                            if (Chase[I][1] == 0) {
-                                /*780*/
-                                J = (8 - 2 * (Chase[I][1] < 10)) / (Chase[I][2] - T);
-                                if (J > 0.95) J = 0.95;
-                                /*790*/
-                                if (RND(0) <= J) {//810
-                                    /*791*/
-                                    print(targetName(Chase[I][1]), "LOSES TARGET");
-                                    /*800*/
-                                    if (Chase[I][1] > 10) printPlain("  - RETURNS  TO  BASE");
-                                    /*801*/
-                                    print(".");
-                                    Chase[I][1] = 0;
-                                    /*810*/
-                                }
+                            if (Chase[I][1] == 0) continue;
+                            /*780*/
+                            J = (8 - 2 * bb(Chase[I][1] < 10)) / (Chase[I][2] - T);
+                            if (J > 0.95) J = 0.95;
+                            /*790*/
+                            if (RND(0) <= J) {//810
+                                /*791*/
+                                printPlain(targetName(Chase[I][1]), "LOSES TARGET");
+                                /*800*/
+                                if (Chase[I][1] > 10) printPlain("  - RETURNS  TO  BASE");
+                                /*801*/
+                                print(".");
+                                Chase[I][1] = 0;
+                                /*810*/
                             }
                         }
                         T0 = T + 10 + INT(21 * RND(0));
