@@ -160,7 +160,7 @@
 
         var N0 = 10, N1 = 20;
         var N2 = N0 + N1;
-        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO", "MA"];
+        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO", "MA", "ZO"];
 
         var targetMap = [{ name: "THULE AFB", lat: 0, long: 0 },
         { name: "ARKHANGELSK", lat: 8261, long: 5922 },
@@ -194,6 +194,10 @@
         { name: "VYBORG", lat: 7575, long: 6300 },
         { name: "YARAN'SK", lat: 8575, long: 6740 }];
 
+        const MAP_MAXRANGE = 4000; // Map maximum range
+        const MAP_MINRANGE = 500; // Map minimum range
+        var mapscale = Math.floor(MAP_MAXRANGE / 2);
+
         var Ms = ["SAM", "MIG"];
         var Ns = new Array(N2 + 1);
         var Tgt = dim(N2, 3);
@@ -225,12 +229,13 @@
             cmd = cmd.trim().toUpperCase();
             if (LEN(cmd) < 2) return 0;
             print();
-            for (let I = 1; I <= 13; I++) {
+            for (let I = 1; I < Cs.length; I++) {
                 if (LEFT(cmd, 2) == Cs[I]) return I;
                 /*305*/
             }
             return 0;
         }
+
         //Advance time
         function addTime() {
             T0 = T + 13 + INT(15 * RND(0));
@@ -337,9 +342,9 @@
         }
 
         function insert(dest, src, pos) {
-            result=dest.substr(0, pos);
-            result+=src;
-            result+=dest.substr(pos + src.length);
+            result = dest.substr(0, pos);
+            result += src;
+            result += dest.substr(pos + src.length);
             return result;
 
         }
@@ -347,12 +352,16 @@
         function print_map() {
             const MAPX = 61;
             const MAPY = 25;
-            const MAXRANGE = 2000;
             var map = [];
-            for (let y = 0; y < MAPY; y++) map.push(".".repeat(MAPX));
+            for (let y = 0; y < MAPY; y++) {
+                let line;
+                if (y == 0 || y == MAPY - 1) line = "+" + "-".repeat(MAPX - 2) + "+";
+                else line = "|" + " ".repeat(MAPX - 2) + "|";
+                map.push(line);
+            }
             var cx = Math.floor(MAPX / 2);
             var cy = Math.floor(MAPY / 2);
-            var zoom = (MAPY / 2) / MAXRANGE;
+            var zoom = (MAPY / 2) / mapscale;
             for (let i = 0; i <= N2; i++) {
                 if (Tgt[i][3] == 2) continue; // Destroyed.
                 let x = Math.round((Tgt[i][1] - X) * zoom * 3) + cx;
@@ -360,11 +369,36 @@
                 if (x < 0 || x >= MAPX || y < 0 || y >= MAPY) continue;
                 let s = Ns[i].substr(0, 2);
                 s = (i <= N0 ? "*" : "+") + s;
-                map[y] = insert(map[y],s,x);
+                map[y] = insert(map[y], s, x);
             }
-            map[cy]=insert(map[cy],"X",cx);
+            map[cy] = insert(map[cy], "X", cx);
             cls();
+            print("Map Scale:", mapscale);
             for (let i = 0; i < map.length; i++) print(map[i]);
+        }
+
+        async function zoomMap() {
+            var n = await inputNum("Enter new map zoom level (" + MAP_MINRANGE + " to " + MAP_MAXRANGE + "):");
+            if (n < MAP_MINRANGE) n = MAP_MINRANGE;
+            if (n > MAP_MAXRANGE) n = MAP_MAXRANGE;
+            mapscale = n;
+            print_map();
+        }
+
+        function pad(s, n, fill) {
+            s = s.toString();
+            while (s.length < n) s = fill + s;
+            return s;
+        }
+
+        function missionTime() {
+            var n = T;
+            var result = ":" + pad(n % 60, 2, "0");
+            n = Math.floor(n / 60);
+            result = ":" + pad(n % 60, 2, "0") + result;
+            n = Math.floor(n / 60);
+            result = n + result;
+            return result;
         }
 
 
@@ -382,7 +416,7 @@
             print();
 /*25*/  printPlain(TAB(10), "COPYRIGHT 1980 BY");
             print();
-            printPlain(TAB(13), "AVALON HILL");
+            printPlain(TAB(13), "AVALON HILL"); print();
 /*27*/  printPlain(TAB(9), "MICROCOMPUTER GAMES");
 /*40*/  for (let I = 0; I <= N2; I++) {
                 Ns[I] = targetMap[I].name;
@@ -452,29 +486,33 @@
                 As = await input("COMMAND");
                 CM = findCommand(As);
                 if (CM <= 0) {
-/*310*/  print("LEGAL COMMANDS ARE:");
+                    print("LEGAL COMMANDS ARE:"); /*310*/
                     print("CO  TO  CHANGE COURSE");
-/*311*/  print("AL  TO  CHANGE ALTITUDE");
+                    print("AL  TO  CHANGE ALTITUDE");
                     print("ST  TO  GET A STATUS REPORT");
-/*312*/  print("RA  TO  GET A RADAR REPORT");
+                    print("RA  TO  GET A RADAR REPORT");
                     print("NA  TO  GET NAVIGATION DATA ");
-/*313*/  print("SE  TO  SEARCH FOR  A DEFENSE COMPLEX");
-/*314*/  print("AU  TO  HAVE AU TO PILOT FLY PLANE");
-/*315*/  print("EV  TO  CONDUCT EVASIVE ACTION");
-/*316*/  print("EC  TO  USE ECM");
-/*317*/  print("PH  TO  LAUNCH PHOENIX MISSILE");
-/*318*/  print("AR  TO  ARM BOMB");
-/*319*/  print("BO  TO  DROP BOMB");
-                    print("MA Print Map");
-                    T0 = T + 3 + INT(5 * RND(0)); // Advance time ... possibley as a penalty...?
+                    print("SE  TO  SEARCH FOR  A DEFENSE COMPLEX");
+                    print("AU  TO  HAVE AU TO PILOT FLY PLANE");
+                    print("EV  TO  CONDUCT EVASIVE ACTION");
+                    print("EC  TO  USE ECM");
+                    print("PH  TO  LAUNCH PHOENIX MISSILE");
+                    print("AR  TO  ARM BOMB");
+                    print("BO  TO  DROP BOMB");
+                    print("MA Print Map | ZO Zoom Map");
+                    T0 = T + 3 + INT(5 * RND(0)); // Advance time
                     // GOTO 1020; // TODO: Work this out.
                 }
                 /*350*/  // ON  CM GOTO 430, 970, 740, 820, 560, 360, 380, 700, 650, 610, 390, 470
                 //        var Cs = ["**", "AU", "EC", "EV", "PH", "NA", "AL", "CO", "ST", "RA", "SE", "AR", "BO"];
 
                 switch (CM) {
-                    case 13: // Map
+                    case 13: // Map : Note, map functions are my custom additions.
                         print_map();
+                        addTime();
+                        break;
+                    case 14: // Zoom Map
+                        await zoomMap();
                         addTime();
                         break;
                     /*360*/
@@ -512,10 +550,9 @@
                         }
                         addTime();
                         break;
-                    case 1: // AU
-                        /*430*/
+                    case 1: // AU /*430*/
                         As = await input("TIME FOR  AUTO PILOT (S,M,H)? ");
-                        T2 = splitTime(As);
+                        T2 = splitTime(As) + T;
                         break;
                     case 12: //BO
                         if (F9 == 2) print("BOMB ALREADY DROPPED.");
@@ -596,15 +633,11 @@
                         /*660*/
                         T0 = T + 5 + INT(RND(0) * 11);
                         break;
-                    case 8: // ST
-
-                        /*700*/
+                    case 8: // ST /*700*/
+                        print("MISSION CLOCK:", missionTime());
                         printPlain("COURSE ", INT(C), "T     SPEED ", S, "KPH"); print();
-                        /*710*/
                         printPlain("ALTITUDE ", A, "M FUEL ", F, "KM"); print();
-                        /*720*/
                         if (F9 != 2) { printPlain("PRIMARY TARGET: ", Ns[T9]); print(); }
-                        /*730*/
                         print(P, "PHOENIX LEFT.");
                         T0 = T + 20 + INT(RND(0) * 21);
                         break;
@@ -871,6 +904,7 @@
                 }
                 print("B1 LANDS AT THULE AFB.");
                 print("MISSION COMPLETE.");
+                endgame();
                 return -1;
             }
             return I9; // If I9 is not zero, interrupt has occurred.
