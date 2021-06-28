@@ -11,13 +11,23 @@
         var linePos = 0; // Estimated cursor position for TAB
         var lastkey = "";
         var lastKeyActive = true;
+        var enhanced = false;
+        var printdest = "console";
+
+        function checkParams() {
+            var q = window.location.search;
+            var params = new URLSearchParams(q);
+            if (params.get("enhanced") > 0) {
+                enhanced = true;
+            }
+        }
 
         function lastKeyPress(event) {
             if (lastKeyActive) lastkey = ev.which;
         }
 
         function cls() { // Clear screeen.
-            $("#console").html("=".repeat(64) + "\n");
+            $("#" + printdest).html("=".repeat(64) + "\n");
         }
 
         function calcLinePos(s) {
@@ -32,7 +42,7 @@
                 if (i > 0 && space) s += " ";
                 s += args[i];
             }
-            var content = $("#console").html();
+            var content = $("#" + printdest).html();
             if (linePos > 0) {
                 let x = calcLinePos(content);
                 while (x++ < linePos) content += " ";
@@ -43,7 +53,7 @@
                 content += "\n";
                 linePos = 0;
             }
-            $("#console").html(content);
+            $("#" + printdest).html(content);
             window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
         }
 
@@ -174,7 +184,7 @@
         }
 
         function RIGHT$(s, pos) {
-            return s.substr(pos - 1);
+            return s.substr(-pos);
         }
 
         function STR$(n) {
@@ -220,6 +230,7 @@
         var T2 = 0;
         var V1, V2, S0, Q1, Q2, Q4;
         var A9 = 0, X = 0, Y = 0;
+        var sinkings = 0;
 
         function insertMap() {
             M$ = MID(M$, 1, 2 * X + BI - 1) + C$ + MID(M$, 2 * X + BI + 1)
@@ -284,7 +295,7 @@
             await delay(1000);
         }
 
-        function combatCasualty(action) { 
+        function combatCasualty(action) {
             if (action == 3500) {
                 printPlain("MAJOR HIT ON ", N$[I9],);
             } else {
@@ -292,7 +303,7 @@
             }
             if (M > 0 && I8 > 0) {
                 printPlain(" (FROM ", NN$[I8], ")");
-            } 
+            }
             print(".")
         }
 
@@ -334,6 +345,7 @@
                     lastkey = "X";
                 }
             );
+            checkParams();
             lastKeyActive = true;
             $("#console").keypress(lastKeyPress);
 
@@ -364,6 +376,11 @@
         }
 
         function drawMap() {
+            if (enhanced) {
+                printdest = "mapbox";
+                cls();
+            }
+
             print();
             print(RIGHT$(STR$(10000 + 100 * T1 + T0), 4), D0, "MAY 1941");
             updateTime();
@@ -398,6 +415,11 @@
                 print(M$);
             }
             showStatus();
+            if (enhanced) {
+                let h = $("#mapbox").height();
+                $("#console_scroller").css("top", h).css("position", "absolute");
+            }
+            printdest = "console";
 
         }
 
@@ -585,6 +607,7 @@
                 }
             }
             updateTime();
+            if (enhanced) drawMap();
             await delay(1000); // Otherwise very much too fast...
             for790:// 790
             for (K = 0; K <= B; K++) {
@@ -602,6 +625,7 @@
                             if (Xa[K] < 0.5) { action = 860; continue; }
                             // 811
                             if (Xa[K] > N + .5) { action = 870; continue; }
+                        case 820:
                             // 820
                             if (Ya[K] < .5) { action = 840; continue; }
                             // 821
@@ -630,7 +654,7 @@
                             if (P1[L] == INT(Ya[K] + 0.5)) return 2000; // Game over: enters port.
                             // 873
                             if (L < P) { action = 872; continue; }
-                            // 875
+                        case 875:
                             Xa[K] = N + 0.49;
                             // 880
                             Aa[K] = 0;
@@ -674,6 +698,7 @@
             if (Q4 == 1 && Q5 == 0) outOfContact();
             // 921
             Q4 = Q5;
+            if (enhanced) drawMap();
             if (M >= 0 && S0 >= 1) return 3000; // Initiate combat/
             // 922
             M = -1;
@@ -697,6 +722,7 @@
                 M = M + 1;
                 // 940
             }
+            if (enhanced) drawMap();
             if (Q1 == 1 && Q3 == 0) await lostContact();
             // 941
             Q1 = Q3;
@@ -704,6 +730,7 @@
                 // 4000
                 Q5 = INT(Ta[0] * T3 / 20);
                 print(Q5, "SINKINGS IN CONVOY.");
+                sinkings += Q5;
                 // 4001
                 if (Q2 == 0) await shortDelay();
                 // 4002
@@ -946,6 +973,7 @@
 
         function endGame(action) {
             // 9000
+            print();
             R = (V1 + .01) / (V2 + .01);
             // 9010
             if (R >= 1) {
@@ -964,22 +992,43 @@
             print(" VICTORY.")
             // 9070
             print("GAME OVER");
+            if (enhanced) {
+                print("Victory Points " + N$[0] + ":", INT(V1), " Brit:", INT(V2));
+                for (let i = 0; i <= B; i++) {
+                    print(N$[i], "Dmg=" + INT(100 * Da[i] / Pa[i]) + "% Spd=" + INT(FNS(i)) + " Tur=" + Ta[i]);
+                }
+                print("Convoy Sinkings: ", sinkings);
+            }
             print("Reload page to retry.");
         };
 
         $(document).ready(game);
 
     </script>
+    <style>
+        .fixed_header {
+            position: fixed;
+            top: 0;
+            background-color: navy;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>North Atlantic Convoy Raider</h1>
-    <pre id="console"></pre>
-    <input type="text" id="input" style="text-transform: uppercase;" />
-    <button type="button" id="enter">Enter</button>
-    <button type="button" id="interrupt">Interrupt</button>
-    <p id="clock">00:00</p>
-    <p><a href="avalon_hill.html">Home</a></p>
+    <div id="console_scroller">
+        <pre id="console"></pre>
+        <input type="text" id="input" style="text-transform: uppercase;" />
+        <button type="button" id="enter">Enter</button>
+        <button type="button" id="interrupt">Interrupt</button>
+        <p id="clock">00:00</p>
+
+        <p><a href="avalon_hill.html">Home</a></p>
+    </div>
+    <div class=fixed_header>
+        <h2>North Atlantic Convoy Raider</h2>
+        <pre id="mapbox"></pre>
+    </div>
+
 </body>
 
 </html>

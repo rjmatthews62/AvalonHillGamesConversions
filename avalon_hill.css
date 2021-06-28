@@ -1,4 +1,4 @@
-body {
+body,tr,td {
     background-color: black;
     color: #00B000;
     font-size: larger;
