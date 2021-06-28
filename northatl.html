@@ -1,0 +1,949 @@
+<html>
+
+<head>
+    <title>North Atlantic Convoy Raider</title>
+    <link rel="stylesheet" href="avalon_hill.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="jquery-3.6.0.min.js"></script>
+
+    <script>
+
+        var linePos = 0; // Estimated cursor position for TAB
+        var lastkeypress = "";
+        var lastKeyActive = true;
+
+        function lastKeyPress(event) {
+            if (lastKeyActive) lastkey = ev.which;
+        }
+
+        function cls() { // Clear screeen.
+            $("#console").html("=".repeat(64) + "\n");
+        }
+
+        function calcLinePos(s) {
+            var ix = s.lastIndexOf("\n");
+            if (ix < 0) ix = 0;
+            return s.length - ix;
+        }
+
+        function printArgs(args, usecr = true, space = true) {
+            var s = "";
+            for (let i = 0; i < args.length; i++) {
+                if (i > 0 && space) s += " ";
+                s += args[i];
+            }
+            var content = $("#console").html();
+            if (linePos > 0) {
+                let x = calcLinePos(content);
+                while (x++ < linePos) content += " ";
+            }
+            content += s;
+            linePos += s.length;
+            if (usecr) {
+                content += "\n";
+                linePos = 0;
+            }
+            $("#console").html(content);
+            window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
+        }
+
+        function print() {
+            printArgs(arguments, true);
+        }
+
+        function printNoCr() {
+            printArgs(arguments, false);
+        }
+
+        function printPlain() {
+            printArgs(arguments, false, false);
+        }
+
+        function doInputWait() {
+            var p = new Promise((myResolve, myReject) => {
+                $("#enter").click(myResolve);
+            }
+            );
+            return p;
+        }
+
+        async function input(prompt, adefault = "") {
+            print(prompt);
+            $("#enter").show();
+            $("#input").show().val(adefault).focus().select();
+            lastkeyActive = false;
+            window.scrollTo(0, document.body.scrollHeight); // Scroll to bottom
+            await doInputWait();
+            $("#enter").hide();
+            $("#input").hide();
+            lastKeyActive = true;
+            lastkeypress = "";
+            return $("#input").val().toUpperCase();
+        }
+
+        async function inputNum(prompt) {
+            let result = await input(prompt);
+            let n = parseInt(result, 10);
+            if (isNaN(n)) n = 0;
+            return n;
+        }
+
+        function GET() { // Check for keypressed.
+            var result = lastKeyPress;
+            if (isNaN(result)) result = "";
+            else if (result == null) result = "";
+            else if (result == undefined) result = "";
+            else result = lastkeypress.toString();
+            lastkeypress = "";
+            return result;
+        }
+
+        function dim(l1, l2) {
+            var result = new Array();
+            for (let i = 0; i <= l1; i++) result.push(new Array(l2 + 1));
+            return result;
+        }
+
+        function dim1(n) {
+            return new Array(n + 1);
+        }
+
+        function RND() {
+            return Math.random();
+        }
+
+        function INT(n) {
+            return Math.floor(n);
+        }
+
+        function SIN(n) {
+            return Math.sin(n);
+        }
+
+        function COS(n) {
+            return Math.cos(n);
+        }
+
+        function ATN(n) {
+            return Math.atan(n);
+        }
+
+        function ABS(n) {
+            return Math.abs(n);
+        }
+
+        function SQR(n) {
+            return Math.sqrt(n);
+        }
+
+        function SGN(n) {
+            if (n < 0) return -1;
+            else if (n > 0) return 1;
+            else return 0;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function pause() {
+            await delay(1000);
+            print();
+        }
+
+        function bb(abool) { //BASIC Boolean behaviour (-1,0)
+            return abool ? -1 : 0;
+        }
+
+        function ASC(c) {
+            if (c == "") c = " ";
+            return c.charCodeAt(0);
+        }
+
+        function CHR(n) {
+            return String.fromCharCode(n);
+        }
+
+        function LEN(s) {
+            return s.length;
+        }
+
+        function MID(s, i, len) {
+            return s.substr(i - 1, len);
+        }
+
+        function LEFT(s, len) {
+            return s.substr(0, len);
+        }
+
+        function RIGHT$(s, pos) {
+            return s.substr(pos - 1);
+        }
+
+        function STR$(n) {
+            var result = n.toString();
+            if (n > 0) result = " " + result;
+            return result;
+        }
+
+        function TAB(n) {
+            var result = "";
+            while (linePos < (n - 1)) {
+                //result += " ";
+                linePos += 1;
+            }
+            return result;
+        }
+
+        function FNS(II) {
+            return S[II] * bb(F[II] > 0) * bb(Da[II] < Pa[II]) * (1 - Math.pow(Da[II] / Pa[II], 2));
+        }
+
+        var shipdata = [
+            { short: "BIS", name: "BISMARCK", t: 4, g: 25, s: 31, p: 100, d: 0, f: 7 },
+            { short: "HOOD", name: "HOOD", t: 4, g: 15, s: 32, p: 30, d: 0, f: 7 },
+            { short: "KGV", name: "KING GEORGE V", t: 3, g: 25, s: 28.5, p: 80, d: 0, f: 5 },
+            { short: "POW", name: "PRINCE OF WALES", t: 2, g: 25, s: 28.5, p: 80, d: 0, f: 7 },
+            { short: "ROD", name: "RODNEY", t: 3, g: 30, s: 21, p: 75, d: 0, f: 5 },
+            { short: "REP", name: "REPULSE", t: 3, g: 15, s: 33, p: 25, d: 0, f: 7 },
+            { short: "REN", name: "RENOWN", t: 3, g: 15, s: 33, p: 25, d: 0, f: 7 },
+            { short: "RAM", name: "RAMILLES", t: 4, g: 15, s: 21, p: 55, d: 0, f: 5 }
+        ];
+
+        // 10
+        var B = 4, C = 6, P = 3, N = 12;
+        // 20
+        var T = dim1(B), G = dim1(B), S = dim1(B), Pa = dim1(B), Da = dim1(B), Xa = dim1(B), Ya = dim1(B), Aa = dim1(B), F = dim1(B), Na = dim1(B), N$ = dim1(B);
+        // 30
+        var C1 = dim1(C), C2 = dim1(C), NN$ = dim1(B);
+        // 50
+        // 130
+        var P1 = [1, 7, 9, 12];
+        // 140
+        var T2 = 0;
+        var V1, V2, S0, Q1, Q2, Q4;
+        var A9 = 0, X = 0, Y = 0;
+
+        function insertMap() {
+            M$ = MID(M$, 1, 2 * X + BI - 1) + C$ + MID(M$, 2 * X + BI + 1)
+        }
+
+        function drawShip() { // 1000 Draw ship...? Maybe?
+            C$ = LEFT(N$[I9], 1);
+            X = INT(Xa[I9] + 0.5);
+            plotMap();
+        }
+
+        function plotMap() {
+            // 1005
+            if (X < 1 || X > N) return;
+            // 1010
+            BI = 0;
+            if (MID(M$, 2 * X, 1) == ".") insertMap();
+            else {
+                // 1020
+                BI = -1;
+                if (MID(M$, 2 * X + BI, 1) == " ") insertMap();
+                else {            // 1030
+                    BI = 1;
+                    if (MID(M$, 2 * X + BI, 1) == " ") insertMap();
+                }
+            };
+            return;
+        }
+
+        function drawConvoy() {
+            // 1050
+            C$ = "C";
+            X = INT(C2[I9] + .5);
+            // 1060
+            plotMap();
+        }
+
+        function spotted() {           // 1500
+            printPlain(" SPOTS ", N$[0], " (", RIGHT$(STR$(10000 + 100 * T1 + T0), 4), ")."); print();
+            // 1510
+        }
+
+        async function outOfRange() { // 7000
+            print("CONVOY NO LONGER IN GUNNERY RANGE.");
+            await shortDelay();
+
+        }
+
+        async function lostContact() { // 6000
+            print("CONVOY NO LONGER SIGHTED.")
+            await shortDelay();
+
+        }
+
+        async function outOfContact() { // 6500
+            print("BATTLESHIP OUT OF CONTACT.")
+            await shortDelay();
+
+        }
+
+        async function shortDelay() { //5000
+            await delay(1000);
+        }
+
+        function combatCasualty(action) { // 3500
+            if (action == 3500) {
+                printPlain("MAJOR HIT ON ", N$[I9],);
+            } else {
+                printPlain("MINOR HIT ON ", N$[I9],);
+            }
+            // 3610
+            if (M > 0 && I8 > 0) {
+                printPlain(" (FROM ", NN$[I8], ")");
+            } else {
+                // 3620
+                print(".")
+            }
+            // 3630
+        }
+
+        function combatKill() { // 3700
+            printPlain(N$[I9], " BLOWS UP AND SINKS.");
+            Na[I] = Na[M];
+            M = M - 1;
+            // 3710
+            Xa[I9] = -99;
+            V1 = V1 + 2 * SQR(Pa[K]);
+            if (M < 0) Q4 = 0;
+            // 3711
+        }
+
+        async function denseFog() {
+            // 980
+            printPlain(N$[0], " ENCOUNTERS DENSE FOG (", RIGHT$(STR$(10000 + 100 * T1 + T0), 4), ").");
+            // 985
+            if (S0 == - 1) await shortDelay();
+            // 986
+            Q1 = 0;
+            Q2 = 0;
+            Q4 = 0;
+
+        }
+
+        async function game() {
+            var action = 360;
+            var gamerunning = true;
+            $("#enter").hide();
+            $("#input").hide();
+            $('#input').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#enter').click();
+                }
+            });
+            lastKeyActive = true;
+            $("#console").keypress(lastKeyPress);
+
+            await initGame();
+            while (gamerunning) {
+                switch (action) { // Simulating complex goto loops.
+                    case 360:
+                    case 630: action = await mainloop(action); break;
+                    case 980: denseFog(); action = checkCommandKey(); break;
+                    case 3000: action = await combat(); break;
+                    case 2000: action = entersPort(); break;
+                    case 7500: action = shipSinks(); break;
+                    case 9000: endGame(); gamerunning = false; break;
+
+                }
+            }
+        }
+
+        async function initGame() {
+            // 150
+            // 170
+            print(" LOAD \n\n\n\n\n\n\n\n\n  ** NORTH ATLANTIC CONVOY RAIDER **");
+            // 171
+            print();
+            printPlain(TAB(10), "COPYRIGHT 1980 BY"); print();
+            // 172
+            print();
+            printPlain(TAB(13), "AVALON HILL"); print;
+            // 173
+            printPlain(TAB(9), "MICROCOMPUTER GAMES");
+            // 174
+            for (I = 0; I <= B; I++) {
+                let ship = shipdata[I];
+                NN$[I] = ship.short;
+                N$[I] = ship.name;
+                T[I] = ship.t;
+                G[I] = ship.g;
+                S[I] = ship.s;
+                Pa[I] = ship.p;
+                Da[I] = ship.d;
+                F[I] = ship.f;
+                //READ NN$(I), N$(I), T(I), G(I), S(I), P(I), D(I), F(I)
+            }
+            // 175
+            await delay(1000);
+            // 180
+            printPlain("\n\n\n\n\n\n\nYOU ARE THE CAPTAIN OF THE ", N$[0], "."); print();
+            // 190
+            print("THERE ARE", B, " BRITISH BATTLESHIPS:");
+            // 200
+            for (I = 1; I <= B; I++) {
+                printPlain(N$[I], " (", LEFT(N$[I], 1), ")"); print();
+            }
+            // 210
+            await delay(1000);
+            // 300
+            Xa[0] = N;
+            Ya[0] = 1;
+            Aa[0] = 3 * Math.PI / 4;
+            for (I = 1; I <= B; I++) {
+                // 310
+                Xa[I] = 1 + (N - 2) * RND(0);
+                Ya[I] = 2 + (N - 2) * RND(0);
+                // 320
+                Aa[I] = ATN((Xa[I] - N) / (Ya[I] - 1));
+            }
+            // 330
+            for (I = 0; I <= C; I++) {
+                C1[I] = 1 + (N - 1) * RND(0);
+                // 340
+                C2[I] = 1 + (N - 3) * RND(0);
+            };
+            V1 = 0; V2 = 0; S0 = 0; Q1 = 0; Q2 = 0; Q4 = 0;
+            // 350
+            D0 = 9 + INT(15 * RND(0));
+            T0 = INT(60 * RND(0));
+            T1 = 5 + INT(3 * RND(0));
+        }
+        // 351
+        //GOTO 970
+        // 360
+        async function mainloop(startline) {
+            if (startline == 360) { // New day.
+                print();
+                print(RIGHT$(STR$(10000 + 100 * T1 + T0), 4), D0, "MAY 1941");
+                // 365  Build the map.
+                for (I = 1; I <= N; I++) {
+                    M$ = " . . . . . . . . . . . . . . . . . . . "
+                    // 366
+                    M$ = LEFT(M$, 2 * N + 1);
+                    // 370
+                    for (J = 0; J <= P; J++) {
+                        if (P1[J] == I) M$ = LEFT(M$, 2 * N - 1) + "* ";
+                        // 380
+                    }
+                    I9 = 0;
+                    if (INT(Ya[0] + 0.5) == I) drawShip();
+                    // 390
+                    if (S0 < 0) continue;
+                    // 400
+                    for (I9 = 1; I9 <= B; I9++) {
+                        if (INT(Ya[I9] + .5) != I) continue;
+                        // 410
+                        if (Math.pow(Xa[I9] - Xa[0], 2) + Math.pow((Ya[I9] - Ya[0]), 2) <= 2) drawShip();
+                        // 420
+                    }
+                    for (I9 = 0; I9 <= C; I9++) {
+                        if (INT(C1[I9] + 0.5) != I) continue;
+                        // 430
+                        if (Math.pow((C2[I9] - Xa[0]), 2) + Math.pow(C1[I9] - Ya[0], 2) <= 2) drawConvoy();
+                        // 440
+                    }
+                    // 450
+                    print(M$);
+                }
+                // 470
+                print();
+                A = Aa[0] * 180 / Math.PI
+                A = INT(360 - A + .01)
+                // 475
+                printPlain("HEADING: ", RIGHT$(STR$(A + 1000), 3), "T");
+                // 480
+                printPlain(TAB(17), "SPEED: ", INT(FNS(0)), "KT"); print();
+                // 490
+                printPlain("DAMAGE: ", INT(100 * Da[0] / Pa[0]), "%"); printPlain(TAB(17), "TURRETS: ", T[0]); print();
+                // 500
+                printPlain("FUEL: ", INT(F[0] * 24), "HRS");
+                printPlain(TAB(17), "WEATHER: ");
+                if (S0 < 0) print("FOG");
+                else print("CLEAR"); // 510
+                var retrycmd = false;
+                do {
+                    retrycmd = false;
+                    // 570
+                    C$ = await input("COMMAND");
+                    // 580
+                    if (C$ == "H") {
+                        // 610
+                        A = await input("HEADING");
+                        A = 360 - A;
+                        // 620
+                        Aa[0] = A * Math.PI / 180;
+                    }
+                    // 590
+                    if (A9 <= 0.25) {
+                        // 591
+                        T2 = await input("HOW MANY HOURS THIS HEADING");
+                        // 600
+                        T2 = INT(60 * T2);
+                        if (T2 <= 0) retrycmd = true;
+                        // 601
+                        //       GOTO 630
+                    }
+                } while (retrycmd);
+            }
+            // 630
+            if (S0 >= 0) {
+                // 631
+                for (K = 1; K <= B; K++) {
+                    // 640
+                    D8 = Ya[K] - Ya[0];
+                    D9 = Xa[K] - Xa[0];
+                    // 650
+                    B8 = FNS(0) * COS(Aa[0]);
+                    B9 = FNS(0) * SIN(Aa[0]);
+                    // 660
+                    D = SQR(D8 * D8 + D9 * D9);
+                    D8 = D8 / D;
+                    D9 = D9 / D;
+                    // 670
+                    S8 = - D9;
+                    S9 = D9;
+                    B7 = B8 * S8 + B9 * S9;
+
+                    function calc730() {
+                        // 730
+                        S9 = D9;
+                        S8 = D8;
+                    }
+                    // 680
+                    if (ABS(B7) >= FNS(K)) calc730();
+                    else {
+                        // 690
+                        S6 = SQR(Math.pow(FNS(K), 2) - B7 * B7);
+                        S7 = B7;
+                        // 700
+                        B6 = B8 * D8 + B9 * D9;
+                        if (S6 <= B6) calc730();
+                        else {
+                            // 710
+                            A = D / (S6 - B6)
+                            I = INT(Ya[0] - A * B8)
+                            J = INT(Xa[0] - A * B9)
+                            // 715
+                            if (I < 1 || I > N || J < 1 || J > N) calc730();
+                            else {
+                                // 720
+                                S9 = S7 * S9 + S6 * D9;
+                                S8 = S7 * S8 + S6 * D8;
+                            }
+                        }
+                    }
+                    // 740
+                    if (S8 == 0) S8 = 1E-8;
+                    // 741
+                    Aa[K] = ATN(S9 / S8);
+                    // 745
+                    if (S8 < 0) Aa[K] = Aa[K] + Math.PI;
+                    // 746
+                }
+            }
+            // 750
+            T3 = 30 + INT(30 * RND(0));
+            if (T3 > T2) T3 = T2;
+            // 760
+            T2 = T2 - T3;
+            T0 = T0 + T3;
+            if (!(T0 < 60)) {
+                // 770
+                T1 = 1 + T1;
+                T0 = T0 - 60;
+                if (!(T1 < 24)) {
+                    // 780
+                    D0 = D0 + 1;
+                    T1 = 0;
+                }
+            }
+            for790:// 790
+            for (K = 0; K <= B; K++) {
+                B8 = -FNS(K) * SIN(Aa[K]);
+                B9 = FNS(K) * COS(Aa[K]);
+                // 800
+                Xa[K] = Xa[K] + B8 * T3 * 1.8E-4;
+                Ya[K] = Ya[K] - B9 * T3 * 1.8E-4;
+                // 810
+                F[K] = F[K] - T3 / 1440;
+                let action = 810;
+                while (true) { // Fairly complex goto cluster.
+                    switch (action) {
+                        case 810:
+                            if (Xa[K] < 0.5) { action = 860; continue; }
+                            // 811
+                            if (Xa[K] > N + .5) { action = 870; continue; }
+                            // 820
+                            if (Ya[K] < .5) { action = 840; continue; }
+                            // 821
+                            if (Ya[K] < N + .5) continue for790; // { action = 890; continue; }
+                            // 830
+                            Ya[K] = N + .49;
+                            action = 850; continue;
+                        case 840:
+                            Ya[K] = .51;
+                            // 850
+                            Aa[K] = 3 * Math.PI / 2;
+                            if (B8 < 0) Aa[K] = Math.PI / 2;
+                            // 851
+                            continue for790; // For loop
+                        case 860:
+                            if (Xa[K] > -50) Xa[K] = .51;
+                            // 861
+                            continue for790;
+                        case 870:
+                            if (K != 0) { action = 875; continue; }
+                            // 871
+                            L = -1;
+                        case 872:
+                            L = L + 1;
+                            if (P1[L] == INT(Ya[K] + 0.5)) return 2000; // Game over: enters port.
+                            // 873
+                            if (L < P) { action = 872; continue; }
+                            // 875
+                            Xa[K] = N + 0.49;
+                            // 880
+                            Aa[K] = 0;
+                            if (B9 < 0) Aa[K] = Math.PI;
+                            // 881
+                            action = 820;
+                        // 890
+                    }
+                }
+            }
+            if (F[0] <= 0) return 7500; // SHip sinks.
+            // 891
+            Q5 = 0;
+            for (K = 0; K <= C; K++) {
+                C2[K] = C2[K] - T3 * 1.8E-3
+            }
+            // 900
+            M = -1;
+            for (K = 1; K <= B; K++) { // Are there any warships in sight?
+                D = Math.pow(Xa[0] - Xa[K], 2) + Math.pow(Ya[0] - Ya[K], 2);
+                // 910*
+                if (D > 2) continue;
+                // 911
+                S0 = S0 + 1;
+                if (S0 < 0) continue;
+                // 912
+                printPlain(N$[K],);
+                spotted();
+                // 913
+                if (S0 == 0 || Q4 == 0) await shortDelay();
+                // 914
+                Q4 = 1;
+                Q5 = 1;
+                // 915
+                if (D > 1) continue;
+                // 916
+                M = M + 1;
+                Na[M] = K;
+                // 920
+            }
+            if (Q4 == 1 && Q5 == 0) outOfContact();
+            // 921
+            Q4 = Q5;
+            if (M >= 0 && S0 >= 1) return 3000; // Initiate combat/
+            // 922
+            M = -1;
+            Q3 = 0;
+            for (K = 0; K <= C; K++) { // Are there any convoys in sight?
+                // 930
+                D = Math.pow(Xa[0] - C2[K], 2) + Math.pow(Ya[0] - C1[K], 2);
+                if (D > 2) continue;
+                // 935
+                S0 = S0 + 1;
+                if (S0 < 0) continue;
+                // 936
+                printPlain("CONVOY",);
+                spotted();
+                if (Q1 == 0) await shortDelay();
+                // 937
+                Q1 = 1;
+                Q3 = 1;
+                if (D > 1) continue;
+                // 938
+                M = M + 1;
+                // 940
+            }
+            if (Q1 == 1 && Q3 == 0) await lostContact();
+            // 941
+            Q1 = Q3;
+            if (M >= 0 && S0 >= 1) {
+                // 4000
+                Q5 = INT(T[0] * T3 / 20);
+                print(Q5, "SINKINGS IN CONVOY.");
+                // 4001
+                if (Q2 == 0) await shortDelay();
+                // 4002
+                Q2 = 1;
+                // 4010
+                V1 = V1 + Q5 / 10;
+                //GOTO 990
+
+            } else {
+                // 942
+                if (Q2 == 1) await outOfRange();
+                // 943
+                Q2 = 0;
+                R = RND(0);
+                if (!(R > 0.1 && R < 0.9)) { //990
+                    // 950
+                    if (R >= 0.5) { //970
+                        // 951
+                        if (T1 > 20 || T1 < 4) return checkCommandKey();
+                        // 952
+                        S0 = S0 + 1 - (S0 < - 2);
+                        // 955
+                        if (S0 >= 0) { //990
+                            // 960
+                            printPlain("AIRCRAFT",)
+                            spotted();
+                            if (S0 == 0) await shortDelay();
+                            // 961
+                        }
+                    } else {
+                        // 970
+                        S0 = S0 + (S0 > - 5)
+                        if (S0 < 0) await denseFog();
+                    }
+                }
+            }
+            return checkCommandKey();
+        }
+
+        function checkCommandKey() {
+            // 990
+            A9 = 0.25;
+            A$ = GET(); // Handle keystroke events somehow.
+            if (A$ == "" && T2 > 0) return 630;
+            // 991
+            return 360;
+        }
+
+        function entersPort() { // 2000
+            printPlain(N$[0], " ENTERS PORT.");
+
+            //RESTORE
+            //READ X, X, X, X, M$, M$, X, X, X, X, X, X
+            //  DATA BIS,BISMARCK,4,25,31,100,0,7
+            M$ = shipdata[0].name;
+            X = shipdata[0].f;
+
+            // 2010
+            V2 = V2 + 20;
+            // 2020
+            A9 = 20 * (0.5 - (1 - Da[0] / Pa[0]) * F[0] / X);
+            // 2030
+            if (A9 < 0) V2 = V2 - A9;
+            // 2031
+            if (A9 >= 0) V1 = V1 + A9;
+            // 2040
+            return 9000;
+        }
+
+        function shipSinks() {        // 7500
+            var action = 7510;
+            if (S0 < 0) action = 7700;
+            // 7501
+            else if (T1 > 20 || T1 < 4) action = 7600;
+            switch (action) {
+                case 7510:
+                    printPlain("WELLINGTON AIRCRAFT BOMB THE ", N$[0], ".");
+                    break;
+                case 7600:
+                    printPlain("BRITISH SUBMARINE TORPEDOES THE ", N$[0], ".");
+                    break;
+                case 7700:
+                    printPlain(N$[0], " HITS AN ICEBERG.");
+                    break;
+            }
+            // 8000
+            printPlain(N$[0], " ROLLS OVER AND SINKS.");
+            // 8010
+            V2 = V2 + 5 * SQR(Pa[0]);
+            return 9000;
+        };
+
+
+        async function combat() {// 3000
+            var action = 3020;
+
+            Q1 = 0;
+            Q2 = 0;
+            T2 = 20 + INT(20 * RND(0));
+            print("SURFACE COMBAT WITH");
+            // 3010
+            for (I = 0; I <= M; I++) {
+                K = Na[I];
+                print(N$[K]);
+            }
+            if (T[0] <= 0) action = 3300;
+            while (true) {
+                switch (action) {
+                    case 3020:
+                        T$ = await input("TARGET SHIP (E TO EVADE)");
+                        // 3021
+                        if (MID(T$, 1, 1) == "E") { action = 3300; continue; }
+                        // 3022
+                        action = 3030; continue;
+
+                    case 3025:
+                        if (T[0] <= 0) { action = 3050; continue; }
+                        // 3026
+                        T$ = await input("TARGET SHIP");
+                    case 3030:
+                        // 3030
+                        TA = 0;
+                        for (I = 0; I <= M; I++) {
+                            K = Na[I];
+                            C$ = LEFT(N$[K], LEN(T$));
+                            if (T$ == C$ && TA == 0) TA = K;
+                            // 3031
+                        }
+                        // 3032
+                        K = TA;
+                        if (K > 0) {
+                            action = 3050; continue;
+                        }
+                        // 3040
+                        print("NO SUCH SHIP.")
+                        action = 3025; continue;
+                    case 3050:
+                        I9 = K;
+                        I8 = 0;
+                        T = 0;
+                    case 3051:
+                        T = T + 1;
+                        if (T > T[0]) { action = 3115; continue; }
+                        // 3052
+                        R = RND(0) / A9;
+                        if (R > 1) { action = 3051; continue; }
+                        // 3060
+                        if (R > .25) { action = 3090; continue; }
+                        // 3061
+                        combatCasualty(3500);
+                        // 3070
+                        Da[K] = Da[K] + G[0] * SQR(RND(0));
+                        if (Da[K] < Pa[K]) { action = 3080; continue; }
+                        // 3075
+                        combatKill();
+                        action = 3115; continue;
+                    case 3080:
+                        T[K] = T[K] - 1;
+                        action = 3051; continue;
+                    case 3090:
+                        Da[K] = Da[K] + G[0] * SQR(RND(0)) / 4
+                        combatCasualty(3600);
+                        if (Da[K] < Pa[K]) { action = 3051; continue; }
+                        // 3095
+                        combatKill();
+                        // 3115
+                        I9 = 0;
+                        I = - 1;
+                    case 3116:
+                        I = I + 1;
+                        if (I > M) { action = 3201; continue; }
+                        // 3117
+                        K = Na[I];
+                        I8 = K;
+                        T = 0;
+                    case 3118:
+                        T = T + 1;
+                        if (T > T[K]) { action = 3116; continue; }
+                        // 3119
+                        R = RND(0) / A9;
+                        // 3120
+                        if (T1 > 20 || T1 < 4) R = R * 2;
+                        // 3121
+                        if (R > 1) { action = 3118; continue; }
+                        // 3130
+                        if (R > 0.25) { action = 3160; continue; }
+                        // 3131
+                        combatCasualty(3500);
+                        // 3140
+                        Da[0] = Da[0] + G[K] * SQR(RND(0));
+                        if (Da[0] >= Pa[0]) return 8000;
+                        // 3150
+                        T[0] = T[0] - 1;
+
+                        if (T[0] < 0) T[0] = 0;
+                        // 3151
+                        action = 3180; continue;
+                    case 3160:
+                        Da[0] = Da[0] + G[K] * SQR(RND(0)) / 4
+                        combatCasualty(3600);
+                        // 3170
+                        if (Da[0] > Pa[0]) return 8000;
+                    case 3180:
+                        action = 3118; continue;
+                    case 3201:
+                        S0 = (M + 1) * 2;
+                        A9 = SQR(A9);
+                        A$ = GET();
+                        if (A$ == "") return 630;
+                        // 3202
+                        return 360;
+                    case 3300:
+                        D1 = 0;
+                        for (I = 0; I <= M; I++) {
+                            K = Na[I];
+                            D = FNS(K);
+                            if (D > D1) D1 = D;
+                            // 3301
+                        }
+                        // 3310
+                        R = Math.exp((FNS(0) - D1) / 8) * RND(0)
+                        if (R < .5) { action = 3025; continue; }
+                        // 3320
+                        S0 = -(3 + M) * 3;
+                        T2 = 0;
+                        return 980; // Encounters FOG
+                }
+            }
+        }
+
+        function endGame(action) {
+            // 9000
+            R = (V1 + .01) / (V2 + .01);
+            // 9010
+            if (R >= 1) {
+                // 9011
+                printPlain(N$[0],)
+            } else {
+                // 9020
+                printPlain("BRITISH",)
+            }
+            R = 1 / R;
+            // 9030
+            if (R > 3) printPlain(" MAJOR",);  // 9050
+            else if (R > 1.5) printPlain(" MINOR",);
+            else printPlain(" MARGINAL",);
+            // 9060
+            print(" VICTORY.")
+            // 9070
+            print("GAME OVER");
+            print("Reload page to retry.");
+        };
+
+        $(document).ready(game);
+
+    </script>
+</head>
+
+<body>
+    <h1>North Atlantic Convoy Raider</h1>
+    <pre id="console"></pre>
+    <input type="text" id="input" style="text-transform: uppercase;" />
+    <button type="button" id="enter">Enter</button>
+    <p><a href="avalon_hill.html">Home</a></p>
+</body>
+
+</html>
