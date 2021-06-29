@@ -1,0 +1,122 @@
+<html>
+
+<head>
+    <title>NACR Help</title>
+    <link rel="stylesheet" href="avalon_hill.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h1>NORTH ATLANTIC CONVOY RAIDER RULES</h1>
+    <h3>© 1980 Microcomputer Games, Inc., division of
+        The Avalon Hill Game Co., Baltimore, MD</h3>
+    <p>
+        ORIGINALLY FOR:
+    <ul>
+        <li>TRS-80®, Level II, 16K></li>
+        <li>PET®, 16K</li>
+        <li>Apple II® , Applesoft® Basic, 16K beyond Basic</li>
+    </ul>
+    <i>®Trademarks of Tandy Corp., Commodore, and Apple.</i></p>
+    <h3>INTRODUCTION</h3>
+    <p>This game pits the Bismarck against the British Home
+        Fleet in a desperate attempt to bring England to her knees
+        by sinking merchant ships or by dealing a decisive blow to
+        her Home Fleet. The action occurs during the spring of
+        1941 in, the North Atlantic Ocean.</p>
+    <h3>OBJECT OF THE GAME</h3>
+    <p>You are the Captain of the Bismarck; the computer
+        handles the British Home Fleet, convoys, and airsearch.
+        The game is played on a 12 x 12 grid representing a portion of the Atlantic Ocean. The object of the game for
+        you is to sink as many British merchant ships and battleships as possible while bringing the Bismarck back to
+        port. The object for the computer is to sink the Bismarck
+        as quickly as possible or at least force it back to port
+        before substantial damage can be done to the British
+        forces.</p>
+    <h3>GAME DISPLAY</h3>
+    <p>The basic game display is the 12 x 12 grid which will
+        be printed on the screen at the start of each Strategic
+        Turn. Each grid zone represents approximately 10,000
+        square miles and is printed as a sequence of three
+        characters. <span class="highlight">'.'</span> is empty ocean and <span class="highlight">'*'</span> is a German port.
+        Convoys are represented by a <span class="highlight">'C'</span> and each battleship is
+        represented by the first letter of its name. If necessary, all
+        three characters will represent ships. For instance, a sequence of <span class="highlight">'KBC'</span> means that the German battleship
+        Bismarck, the British battleship King George V, and a
+        convoy all occupy the same grid zone. The order of
+        characters is irrelevant.</p>
+    <h3>BEGINNING THE GAME</h3>
+    <p>At the beginning of the game, the computer will
+        initialize a sequence of pseudo-random numbers which
+        will determine the initial British positions and will also be
+        used throughout the game to simulate chance events. The
+        computer will then print a title and a list of the British
+        battleships. After a few seconds of calculation, the first
+        Strategic Turn will begin in foggy weather.</p>
+    <h3>STRATEGIC TURNS</h3>
+    <p>There are two types of game turns: Strategic Turns
+        and Tactical Turns. The Strategic Turn begins with a
+        printing of the 12 x 12 ocean map, including all convoys
+        and battleships which are currently spotted. Useful information, such as damage and remaining fuel, is printed
+        on
+        the map display. After printing the grid, the computer
+        will ask for a command. Typing an H followed by pressing ENTER will signal the computer for a change of
+        heading. Pressing ENTER will use the current heading. After requesting the new heading (if
+        necessary), the computer will ask how many hours to
+        continue on course. Unless otherwise directed, the computer will not begin a new Strategic Turn until the input
+        number of hours has elapsed.</p>
+    <h3>TACTICAL TURNS</h3>
+    <p>Each Strategic Turn will contain one or more Tactical
+        Turns. A Tactical Turn is approximately thirty minutes
+        to one hour of time. During the Tactical Turns, the computer does not normally require input. Messages will be
+        typed on the screen to inform the player of events which
+        transpire. When a major change occurs in the tactical
+        situation, the computer will print a message and then
+        wait approximately 4 seconds. Before beginning each
+        new Tactical Turn, the computer will check for any input
+        on the keyboard <span class="highlight">Or pressing the INTERRUPT button</span> (holding down the space bar, for
+        instance). Ifthere is any input, a new Strategic Turn will be
+        started immediately. In this way, the player can interrupt
+        the Tactical Turns if necessary.</p>
+    <h3>COMBAT</h3>
+    <p>The Bismarck will fire its guns each Tactical Turn
+        when sufficiently close to a British convoy or battleship.
+        No input is necessary to fire at a convoy; it will be done
+        automatically and the number of sinkings will be
+        reported. When combat is necessary with a battleship,
+        the computer will ask for a target ship. The player should
+        reply with the name (the first character is sufficient) 0 f
+        the battleship at which he wishes to fire, or press ENTER
+        ('E' for PET) in case he wishes to attempt to withdraw
+        from combat. In case the Bismarck has lost all firepower,
+        an automatic withdrawal attempt will be made and no input is required.</p>
+    <h3>WEATHER AND LIGHT CONDITIONS</h3>
+    <p>There are two types of weather and two types oflight
+        conditions. During clear weather, the British Home Fleet
+        is assumed to know the position, course, and speed ofthe
+        Bismarck, and will plot intercepts accordingly. During
+        foggy weather, the British Home Fleet will rely on the last
+        course computed during clear weather. The light conditions are simply day and night. Night lasts from 2100
+        hours to 0400 hours. During the night, British gunnery is
+        less accurate and air search is impossible.</p>
+    <h3>MISCELLANEOUS DETAILS OF PLAY</h3>
+    <p>Headings are in standard compass degrees: 360 or 0 is
+        north (up on the screen), 90 is east (right), 180 is south
+        (down), and 270 is west (left). All convoys head due west
+        at 10 knots. Occasionally, a convoy that has moved off
+        the display is still close enough to be fired upon by
+        Bismarck at the utmost western edge of the grid. Speed is
+        measured in knots and fuel remaining is measured in
+        hours. Heading east off the grid at a port zone will end
+        the game.</p>
+    <h3>VICTORY</h3>
+    <p>The victory conditions are. heavily weighted toward
+        the British (computer) to compensate for inferior ships
+        and lack of a sophisticated strategy. Simply sinking one
+        British battleship and then returning to port is not good
+        enough. The game ends when the Bismarck is sunk or
+        returns to a port, at which time the victor and level of victory are printed.</p>
+    <p><a href="avalon_hill.html">Home</a></p>
+</body>
+
+</html>
