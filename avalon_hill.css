@@ -5,6 +5,11 @@ body,tr,td {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.highlight {
+    color: white;
+    font-weight: bold;
+}
+
 a:link { color: #00ff00; }
 a:visited {color: #008000;}
 a:hover {color: black; background-color: #008000;}

@@ -207,14 +207,14 @@
         }
 
         var shipdata = [
-            { short: "BIS", name: "BISMARCK", t: 4, g: 25, s: 31, p: 100, d: 0, f: 7 },
-            { short: "HOOD", name: "HOOD", t: 4, g: 15, s: 32, p: 30, d: 0, f: 7 },
-            { short: "KGV", name: "KING GEORGE V", t: 3, g: 25, s: 28.5, p: 80, d: 0, f: 5 },
-            { short: "POW", name: "PRINCE OF WALES", t: 2, g: 25, s: 28.5, p: 80, d: 0, f: 7 },
-            { short: "ROD", name: "RODNEY", t: 3, g: 30, s: 21, p: 75, d: 0, f: 5 },
-            { short: "REP", name: "REPULSE", t: 3, g: 15, s: 33, p: 25, d: 0, f: 7 },
-            { short: "REN", name: "RENOWN", t: 3, g: 15, s: 33, p: 25, d: 0, f: 7 },
-            { short: "RAM", name: "RAMILLES", t: 4, g: 15, s: 21, p: 55, d: 0, f: 5 }
+            { short: "BIS", name: "BISMARCK", turrets: 4, gun: 25, speed: 31, hull: 100, d: 0, fuel: 7 },
+            { short: "HOOD", name: "HOOD", turrets: 4, gun: 15, speed: 32, hull: 30, d: 0, fuel: 7 },
+            { short: "KGV", name: "KING GEORGE V", turrets: 3, gun: 25, speed: 28.5, hull: 80, d: 0, fuel: 5 },
+            { short: "POW", name: "PRINCE OF WALES", turrets: 2, gun: 25, speed: 28.5, hull: 80, d: 0, fuel: 7 },
+            { short: "ROD", name: "RODNEY", turrets: 3, gun: 30, speed: 21, hull: 75, d: 0, fuel: 5 },
+            { short: "REP", name: "REPULSE", turrets: 3, gun: 15, speed: 33, hull: 25, d: 0, fuel: 7 },
+            { short: "REN", name: "RENOWN", turrets: 3, gun: 15, speed: 33, hull: 25, d: 0, fuel: 7 },
+            { short: "RAM", name: "RAMILLES", turrets: 4, gun: 15, speed: 21, p: 55, d: 0, fuel: 5 }
         ];
 
         // 10
@@ -460,23 +460,29 @@
                 let ship = shipdata[I];
                 NN$[I] = ship.short;
                 N$[I] = ship.name;
-                Ta[I] = ship.t;
-                G[I] = ship.g;
-                S[I] = ship.s;
-                Pa[I] = ship.p;
+                Ta[I] = ship.turrets;
+                G[I] = ship.gun;
+                S[I] = ship.speed;
+                Pa[I] = ship.hull;
                 Da[I] = ship.d;
-                F[I] = ship.f;
+                F[I] = ship.fuel;
                 //READ NN$(I), N$(I), T(I), G(I), S(I), P(I), D(I), F(I)
             }
             // 175
             await delay(1000);
+            if (enhanced) cls();
             // 180
             printPlain("\n\n\n\n\n\n\nYOU ARE THE CAPTAIN OF THE ", N$[0], "."); print();
             // 190
             print("THERE ARE", B, " BRITISH BATTLESHIPS:");
             // 200
             for (I = 1; I <= B; I++) {
-                printPlain(N$[I], " (", LEFT(N$[I], 1), ")"); print();
+                printPlain(N$[I], " (", LEFT(N$[I], 1), ")"); 
+                if (enhanced) {
+                    let ship=shipdata[I];
+                    printPlain(" Tur=",ship.turrets," Gun=",ship.gun," Spd=",ship.speed," Hull=",ship.hull);
+                }
+                print();
             }
             // 210
             await delay(1000);
@@ -786,7 +792,7 @@
             //READ X, X, X, X, M$, M$, X, X, X, X, X, X
             //  DATA BIS,BISMARCK,4,25,31,100,0,7
             M$ = shipdata[0].name;
-            X = shipdata[0].f;
+            X = shipdata[0].fuel;
 
             // 2010
             V2 = V2 + 20;
@@ -959,7 +965,7 @@
                         }
                         // 3310
                         R = Math.exp((FNS(0) - D1) / 8) * RND(0)
-                        if (R < .5) { action = 3025; continue; }
+                        if (R < .5) { print("EVASION FAILED."); action = 3025; continue; }
                         // 3320
                         S0 = -(3 + M) * 3;
                         T2 = 0;
@@ -995,7 +1001,9 @@
             if (enhanced) {
                 print("Victory Points " + N$[0] + ":", INT(V1), " Brit:", INT(V2));
                 for (let i = 0; i <= B; i++) {
-                    print(N$[i], "Dmg=" + INT(100 * Da[i] / Pa[i]) + "% Spd=" + INT(FNS(i)) + " Tur=" + Ta[i]);
+                    print(N$[i], 
+                    (Da[i]>=Pa[i] ? "Sunk " : "Dmg=" + INT(100 * Da[i] / Pa[i]) + "% "
+                    + (F[i]<0 ? "(Out of Fuel)"  : "Spd=" + INT(FNS(i)))+ " Tur=" + Ta[i]));
                 }
                 print("Convoy Sinkings: ", sinkings);
             }
@@ -1022,7 +1030,7 @@
         <button type="button" id="interrupt">Interrupt</button>
         <p id="clock">00:00</p>
 
-        <p><a href="avalon_hill.html">Home</a></p>
+        <p><a href="avalon_hill.html">Home</a> <a href="nacrhelp.html" target="_blank">How to Play</a></p>
     </div>
     <div class=fixed_header>
         <h2>North Atlantic Convoy Raider</h2>
