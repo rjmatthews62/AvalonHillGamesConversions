@@ -1,0 +1,32 @@
+<html>
+
+<head>
+    <title>Midway Campaign</title>
+    <link rel="stylesheet" href="avalon_hill.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="jquery-3.6.0.min.js"></script>
+    <script src="basicFunctions.js"></script>
+    <script src="midway.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#enter").hide();
+            $("#input").hide();
+            $('#input').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#enter').click();
+                }
+            });
+            game();
+        });
+    </script>
+
+</head>
+
+<body>
+    <pre id="console"></pre>
+    <input type="text" id="input" style="text-transform: uppercase;" />
+    <button type="button" id="enter">Enter</button>
+    <p><a href="avalon_hill.html">Home</a>
+</body>
+
+</html>

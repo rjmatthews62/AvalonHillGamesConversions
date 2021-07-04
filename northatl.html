@@ -427,8 +427,8 @@
 
             // 470
             print();
-            A = Aa[0] * 180 / Math.PI
-            A = INT(360 - A + .01)
+            A = Aa[0] * 180 / Math.PI; //Convert to degrees.
+            A = INT(360 - A + .01);
             // 475
             printPlain("HEADING: ", RIGHT$(STR$(A + 1000), 3), "T");
             // 480
@@ -438,8 +438,11 @@
             // 500
             printPlain("FUEL: ", INT(F[0] * 24), "HRS");
             printPlain(TAB(17), "WEATHER: ");
-            if (S0 < 0) print("FOG");
-            else print("CLEAR"); // 510
+            var s= (S0<0) ? "FOG" : "CLEAR"; // 510
+            if (enhanced) {
+            s+=" "+((T1 > 20 || T1 < 4) ? "NIGHT" : "DAY");
+            }
+            print(s);
 
         }
 
@@ -489,16 +492,16 @@
             // 300
             Xa[0] = N;
             Ya[0] = 1;
-            Aa[0] = 3 * Math.PI / 4;
-            for (I = 1; I <= B; I++) {
+            Aa[0] = 3 * Math.PI / 4;  // Bismark Heads 270
+            for (I = 1; I <= B; I++) { // Randomly place ships.
                 // 310
-                Xa[I] = 1 + (N - 2) * RND(0);
+                Xa[I] = 1 + (N - 2) * RND(0); 
                 Ya[I] = 2 + (N - 2) * RND(0);
                 // 320
-                Aa[I] = ATN((Xa[I] - N) / (Ya[I] - 1));
+                Aa[I] = ATN((Xa[I] - N) / (Ya[I] - 1)); //  Head towards Bismarks location (upper right)
             }
             // 330
-            for (I = 0; I <= C; I++) {
+            for (I = 0; I <= C; I++) { // Randomly position convoys.
                 C1[I] = 1 + (N - 1) * RND(0);
                 // 340
                 C2[I] = 1 + (N - 3) * RND(0);
@@ -616,52 +619,52 @@
             if (enhanced) drawMap();
             await delay(1000); // Otherwise very much too fast...
             for790:// 790
-            for (K = 0; K <= B; K++) {
+            for (K = 0; K <= B; K++) { //Move ships.
                 B8 = -FNS(K) * SIN(Aa[K]);
                 B9 = FNS(K) * COS(Aa[K]);
                 // 800
-                Xa[K] = Xa[K] + B8 * T3 * 1.8E-4;
+                Xa[K] = Xa[K] + B8 * T3 * 1.8E-4;  // T3=minutes elapsed, 1.8E-4 is scaled Nm/minute (I guess...)
                 Ya[K] = Ya[K] - B9 * T3 * 1.8E-4;
                 // 810
-                F[K] = F[K] - T3 / 1440;
+                F[K] = F[K] - T3 / 1440; // Reduce fuel (1440=minutes/day)
                 let action = 810;
-                while (true) { // Fairly complex goto cluster.
+                while (true) { // Fairly complex goto cluster, handling map boundaries.
                     switch (action) {
                         case 810:
-                            if (Xa[K] < 0.5) { action = 860; continue; }
+                            if (Xa[K] < 0.5) { action = 860; continue; } // Bounce off left wall
                             // 811
-                            if (Xa[K] > N + .5) { action = 870; continue; }
+                            if (Xa[K] > N + .5) { action = 870; continue; }// Bounce off right wall (or possibly enter port.)
                         case 820:
                             // 820
-                            if (Ya[K] < .5) { action = 840; continue; }
+                            if (Ya[K] < .5) { action = 840; continue; } // Bounce off top
                             // 821
-                            if (Ya[K] < N + .5) continue for790; // { action = 890; continue; }
+                            if (Ya[K] < N + .5) continue for790; // OK, in bounds.
                             // 830
-                            Ya[K] = N + .49;
+                            Ya[K] = N + .49; // Bounce off bottom.
                             action = 850; continue;
                         case 840:
                             Ya[K] = .51;
                         case 850:
                             // 850
-                            Aa[K] = 3 * Math.PI / 2;
-                            if (B8 < 0) Aa[K] = Math.PI / 2;
+                            Aa[K] = 3 * Math.PI / 2;              // Set course 270
+                            if (B8 < 0) Aa[K] = Math.PI / 2; // If heading up, set course 180
                             // 851
                             continue for790; // For loop
                         case 860:
-                            if (Xa[K] > -50) Xa[K] = .51;
+                            if (Xa[K] > -50) Xa[K] = .51;  // Push ship back a little.
                             // 861
                             continue for790;
                         case 870:
-                            if (K != 0) { action = 875; continue; }
+                            if (K != 0) { action = 875; continue; } // Bismark may have entered port.
                             // 871
                             L = -1;
-                        case 872:
+                        case 872: // Check if Bismark is the right Y position for a port.
                             L = L + 1;
                             if (P1[L] == INT(Ya[K] + 0.5)) return 2000; // Game over: enters port.
                             // 873
-                            if (L < P) { action = 872; continue; }
+                            if (L < P) { action = 872; continue; } // Keep looking for ports.
                         case 875:
-                            Xa[K] = N + 0.49;
+                            Xa[K] = N + 0.49; // Not Bismark....go up or down.
                             // 880
                             Aa[K] = 0;
                             if (B9 < 0) Aa[K] = Math.PI;
@@ -671,20 +674,20 @@
                     }
                 }
             }
-            if (F[0] <= 0) return 7500; // SHip sinks.
+            if (F[0] <= 0) return 7500; // runs out of fuel. Game over.
             // 891
             Q5 = 0;
-            for (K = 0; K <= C; K++) {
-                C2[K] = C2[K] - T3 * 1.8E-3
+            for (K = 0; K <= C; K++) { // Move convoy right to left.
+                C2[K] = C2[K] - T3 * 1.8E-3 // 10 Knots
             }
             // 900
             M = -1;
             for (K = 1; K <= B; K++) { // Are there any warships in sight?
                 D = Math.pow(Xa[0] - Xa[K], 2) + Math.pow(Ya[0] - Ya[K], 2);
                 // 910*
-                if (D > 2) continue;
+                if (D > 2) continue; // 2 squars max range.
                 // 911
-                S0 = S0 + 1;
+                S0 = S0 + 1; 
                 if (S0 < 0) continue;
                 // 912
                 printPlain(N$[K],);
@@ -755,9 +758,9 @@
                     // 950
                     if (R >= 0.5) { //970
                         // 951
-                        if (T1 > 20 || T1 < 4) return checkCommandKey();
+                        if (T1 > 20 || T1 < 4) return checkCommandKey();  // Night. No aircraft spotting.
                         // 952
-                        S0 = S0 + 1 - (S0 < - 2);
+                        S0 = S0 + 1 - bb(S0 < -2);
                         // 955
                         if (S0 >= 0) { //990
                             // 960
@@ -768,7 +771,7 @@
                         }
                     } else {
                         // 970
-                        S0 = S0 + (S0 > - 5)
+                        S0 = S0 + bb(S0 > -5)
                         if (S0 < 0) await denseFog();
                     }
                 }
@@ -808,9 +811,9 @@
 
         function shipSinks() {        // 7500
             var action = 7510;
-            if (S0 < 0) action = 7700;
+            if (S0 < 0) action = 7700; // Nothing in sight.
             // 7501
-            else if (T1 > 20 || T1 < 4) action = 7600;
+            else if (T1 > 20 || T1 < 4) action = 7600; // Night...
             switch (action) {
                 case 7510:
                     printPlain("WELLINGTON AIRCRAFT BOMB THE ", N$[0], ".");
